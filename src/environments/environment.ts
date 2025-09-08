@@ -2,9 +2,5 @@ import { firebaseConfig } from './firebase.config';
 
 export const environment = {
   production: false,
-  development: true,
   firebase: firebaseConfig,
-  // Configuraciones para local development
-  apiUrl: 'http://localhost:4200',
-  enableDebugMode: true,
 };
