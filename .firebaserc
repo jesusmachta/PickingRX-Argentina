@@ -1,5 +1,17 @@
 {
   "projects": {
     "default": "picking-cds-ar"
+  },
+  "targets": {
+    "picking-cds-ar": {
+      "hosting": {
+        "production": [
+          "picking-cds-ar"
+        ],
+        "development": [
+          "picking-cds-ar"
+        ]
+      }
+    }
   }
 }
