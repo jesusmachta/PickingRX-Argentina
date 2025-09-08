@@ -5,13 +5,11 @@
   "targets": {
     "picking-cds-ar": {
       "hosting": {
-        "production": [
-          "picking-cds-ar"
-        ],
         "dev": [
           "picking-cds-ar"
         ]
       }
     }
-  }
+  },
+  "etags": {}
 }
