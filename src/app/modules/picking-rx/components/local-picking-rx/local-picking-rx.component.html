@@ -1,0 +1,207 @@
+<div class="min-h-screen bg-gray-50 pt-16 md:pt-20">
+  <div class="max-w-7xl mx-auto px-4 py-8 md:px-6 md:py-12">
+    <!-- Header (conditional) -->
+    <div *ngIf="showHeader" class="flex flex-col md:flex-row md:items-center gap-4 mb-8">
+      <div class="flex items-center gap-4 w-full md:w-auto">
+        <button
+          class="bg-none border-none text-primary cursor-pointer p-2 rounded-lg transition-all duration-300 flex items-center justify-center hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          (click)="goBack()"
+          type="button"
+          aria-label="Volver">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <!-- Title only in mobile -->
+        <div class="flex-1 md:hidden">
+          <h1 class="text-3xl font-bold text-primary">{{ customTitle }}</h1>
+          <p class="text-sm text-gray-600">{{ totalOrders }} pedidos totales</p>
+        </div>
+      </div>
+      <!-- Title only in desktop -->
+      <div class="flex-1 hidden md:block">
+        <h1 class="text-4xl font-bold text-primary">{{ customTitle }}</h1>
+        <p class="text-lg text-gray-600">{{ totalOrders }} pedidos totales</p>
+        <p class="text-sm text-gray-500">Gestión de pedidos pendientes y preparados</p>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <div class="flex flex-col items-center justify-center py-12">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p class="text-gray-600 mt-4">Cargando pedidos...</p>
+      </div>
+    </div>
+
+    <!-- Orders Sections -->
+    <div *ngIf="!isLoading" class="grid grid-cols-1 lg:grid-cols-1 gap-8">
+
+      <!-- Pending Orders -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-warning/5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <mat-icon class="text-warning">pending</mat-icon>
+              <div>
+                <h3 class="text-lg font-medium text-gray-800">Pedidos Pendientes</h3>
+                <p class="text-sm text-gray-600">{{ pendingCount }} pedidos por preparar</p>
+              </div>
+            </div>
+            <div *ngIf="showNotifications" class="flex items-center gap-2">
+              <button
+                (click)="enableNotifications()"
+                class="text-sm text-blue-600 hover:text-blue-800 underline focus:outline-none">
+                Habilitar notificaciones
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State Pending -->
+        <div *ngIf="pendingOrders.length === 0" class="px-6 py-12 text-center">
+          <mat-icon class="text-gray-400 text-6xl mb-4">check_circle</mat-icon>
+          <h3 class="text-lg font-medium text-gray-800 mb-2">¡Excelente!</h3>
+          <p class="text-gray-600">No hay pedidos pendientes por preparar.</p>
+        </div>
+
+        <!-- Pending Orders List -->
+        <div *ngIf="pendingOrders.length > 0" class="max-h-96 overflow-y-auto">
+          <div *ngFor="let order of pendingOrders" class="mx-4 my-3 p-4 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 transition-colors cursor-pointer" (click)="openOrderDetail(order)">
+            <div class="flex items-start justify-between mb-3">
+              <div class="flex-1">
+                <h4 class="text-xl font-bold text-red-800 mb-1">{{ order.idOrden }}</h4>
+                <div class="text-sm text-gray-700 mb-2">
+                  <p class="leading-relaxed max-h-12 overflow-hidden">{{ getDisplayText(order) }}</p>
+                  <button
+                    *ngIf="shouldTruncateText(order.itemRxString) && order.id"
+                    (click)="toggleOrderExpansion(order.id); $event.stopPropagation()"
+                    class="text-blue-600 hover:text-blue-800 text-xs font-medium mt-1 focus:outline-none">
+                    {{ isOrderExpanded(order.id) ? 'Ver menos' : 'Ver más' }}
+                  </button>
+                </div>
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="text-xs font-medium text-gray-600">{{ formatItemsCount(order.itemRX) }}</span>
+                  <span *ngIf="hasOpportunityItems(order.itemRX)"
+                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning text-white">
+                    Con oportunidad
+                  </span>
+                </div>
+              </div>
+              <div class="text-right ml-4">
+                <p class="text-sm font-semibold text-red-700">{{ formatDate(order.date) }}</p>
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-2">
+              <button
+                (click)="markOrderAsPrepared(order, false); $event.stopPropagation()"
+                class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-1.5 px-3 rounded-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center gap-2 text-sm">
+                <mat-icon class="text-sm">check</mat-icon>
+                Preparar
+              </button>
+              <button
+                (click)="markOrderAsPrepared(order, true); $event.stopPropagation()"
+                class="bg-green-500 hover:bg-green-600 text-white font-medium py-1.5 px-3 rounded-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center gap-2 text-sm">
+                <mat-icon class="text-sm">local_offer</mat-icon>
+                Con Oportunidad
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prepared Orders -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-success/5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <mat-icon class="text-success">check_circle</mat-icon>
+              <div>
+                <h3 class="text-lg font-medium text-gray-800">Pedidos Preparados</h3>
+                <p class="text-sm text-gray-600">{{ preparedCount }} pedidos listos</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State Prepared -->
+        <div *ngIf="preparedOrders.length === 0" class="px-6 py-12 text-center">
+          <mat-icon class="text-gray-400 text-6xl mb-4">inventory</mat-icon>
+          <h3 class="text-lg font-medium text-gray-800 mb-2">No hay pedidos preparados</h3>
+          <p class="text-gray-600">Los pedidos que marques como preparados aparecerán aquí.</p>
+        </div>
+
+        <!-- Prepared Orders List -->
+        <div *ngIf="preparedOrders.length > 0" class="max-h-96 overflow-y-auto">
+          <div *ngFor="let order of preparedOrders" class="mx-4 my-3 p-4 rounded-lg border border-yellow-200 bg-yellow-50 hover:bg-yellow-100 transition-colors">
+            <div class="flex items-start justify-between mb-3">
+              <div class="flex-1">
+                <h4 class="text-xl font-bold text-yellow-800 mb-1">{{ order.idOrden }}</h4>
+                <div class="text-sm text-gray-700 mb-2">
+                  <p class="leading-relaxed max-h-12 overflow-hidden">{{ getDisplayText(order) }}</p>
+                  <button
+                    *ngIf="shouldTruncateText(order.itemRxString) && order.id"
+                    (click)="toggleOrderExpansion(order.id); $event.stopPropagation()"
+                    class="text-blue-600 hover:text-blue-800 text-xs font-medium mt-1 focus:outline-none">
+                    {{ isOrderExpanded(order.id) ? 'Ver menos' : 'Ver más' }}
+                  </button>
+                </div>
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="text-xs font-medium text-gray-600">{{ formatItemsCount(order.itemRX) }}</span>
+                  <span *ngIf="order.preparedWithOpportunity"
+                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning text-white">
+                    Con oportunidad
+                  </span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-success text-white">
+                    Preparado
+                  </span>
+                </div>
+                <p class="text-xs text-yellow-700">Preparado: {{ formatDate(order.preparedDate) }}</p>
+              </div>
+              <div class="text-right ml-4">
+                <p class="text-sm font-semibold text-yellow-700">{{ formatDate(order.date) }}</p>
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-2">
+              <button
+                (click)="openOrderDetail(order)"
+                class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-1.5 px-3 rounded-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 flex items-center gap-2 text-sm">
+                <mat-icon class="text-sm">visibility</mat-icon>
+                Ver Detalle
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons (for testing/demo purposes) -->
+    <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h3 class="text-lg font-medium text-gray-800 mb-4">Acciones de Prueba</h3>
+      <div class="flex flex-wrap gap-2">
+        <button
+          (click)="refreshOrders()"
+          class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+          Refrescar Pedidos
+        </button>
+        <button
+          (click)="clearAllOrders()"
+          class="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+          Limpiar Todos
+        </button>
+        <button
+          (click)="addNewOrder({
+            id: 'ORD-' + Date.now(),
+            date: new Date(),
+            idOrden: 'ORD-' + Date.now(),
+            itemRxString: 'Producto de prueba x 5',
+            itemRX: [{ barcode: '123', name: 'Producto de prueba', quantity: '5', sku: 'TEST', image: '', opportunityReason: '', opportunity: false }],
+            state: 0
+          })"
+          class="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+          Agregar Pedido de Prueba
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
