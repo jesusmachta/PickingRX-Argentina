@@ -66,7 +66,7 @@ export class OcrService {
     const worker = await Tesseract.createWorker('eng', 1, {
       logger: (m: any) => {
         if (onProgress) {
-          const status = m.status || 'Processing...';
+          const status = this.translateStatus(m.status || 'Processing...');
           const progress = m.status === 'recognizing text' && m.progress ? m.progress * 100 : 0;
           onProgress(status, progress);
         }
@@ -79,5 +79,21 @@ export class OcrService {
     } finally {
       await worker.terminate();
     }
+  }
+
+  private translateStatus(status: string): string {
+    const translations: { [key: string]: string } = {
+      'loading tesseract core': 'Cargando motor OCR...',
+      'initializing tesseract': 'Inicializando OCR...',
+      'initialized tesseract': 'OCR inicializado',
+      'loading language traineddata': 'Cargando idioma...',
+      'loaded language traineddata': 'Idioma cargado',
+      'initializing api': 'Inicializando API...',
+      'initialized api': 'API inicializada',
+      'recognizing text': 'Reconociendo texto...',
+      'Processing...': 'Procesando...'
+    };
+
+    return translations[status.toLowerCase()] || status;
   }
 }
