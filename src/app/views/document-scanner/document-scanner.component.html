@@ -1,0 +1,76 @@
+<div class="scanner-container">
+  <h2>Escanear Remito</h2>
+  <p>Selecciona una imagen de un remito para extraer el texto.</p>
+
+  <div class="upload-section">
+    <input
+      type="file"
+      (change)="onFileChange($event)"
+      accept="image/*"
+      #fileInput
+      hidden
+    />
+    <button (click)="fileInput.click()" class="btn btn-primary">
+      Subir Imagen
+    </button>
+  </div>
+
+  <div *ngIf="selectedImage" class="preview-section">
+    <h3>Vista Previa</h3>
+    <img [src]="selectedImage" alt="Vista previa del remito" />
+  </div>
+
+  <div *ngIf="selectedImage" class="action-section">
+    <button (click)="recognizeImage()" class="btn btn-secondary" [disabled]="ocrInProgress">
+      {{ ocrInProgress ? 'Procesando...' : 'Extraer Texto' }}
+    </button>
+  </div>
+
+  <div *ngIf="ocrInProgress" class="progress-section">
+    <p>{{ ocrStatus }}</p>
+    <progress [value]="ocrProgress" max="100"></progress>
+  </div>
+
+  <div *ngIf="parsedItems && parsedItems.length > 0" class="result-section">
+    <h3>Datos Extraídos</h3>
+    <p>Por favor, valida que los datos extraídos sean correctos.</p>
+    
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Cant. Pedida</th>
+          <th>Cant. Escaneada</th>
+          <th>SKU</th>
+          <th>Descripción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of parsedItems">
+          <td>{{ item.quantity_asked }}</td>
+          <td>{{ item.quantity_scanned }}</td>
+          <td>{{ item.sku }}</td>
+          <td>{{ item.description }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="action-section">
+      <button 
+        class="btn btn-primary" 
+        (click)="onConfirmAndSave()" 
+        [disabled]="uploadInProgress">
+        {{ uploadInProgress ? 'Guardando...' : 'Confirmar y Guardar' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="ocrResult && (!parsedItems || parsedItems.length === 0)" class="result-section">
+    <h3>No se pudieron extraer datos estructurados</h3>
+    <p>A continuación se muestra el texto completo extraído de la imagen:</p>
+    <pre>{{ ocrResult }}</pre>
+  </div>
+
+  <div *ngIf="uploadSuccess" class="success-message">
+    <p>¡Remito guardado con éxito!</p>
+  </div>
+</div>

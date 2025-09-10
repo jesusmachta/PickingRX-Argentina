@@ -31,6 +31,15 @@ export class HomepageService {
           isEnabled: true,
           color: CORPORATE_COLORS.PRIMARY,
         },
+        {
+          id: 'document-scanner',
+          title: 'Escanear Remito',
+          description: 'Digitalizar remitos usando la cámara',
+          icon: 'camera',
+          route: '/document-scanner',
+          isEnabled: true,
+          color: CORPORATE_COLORS.PRIMARY,
+        },
       ],
     };
 
