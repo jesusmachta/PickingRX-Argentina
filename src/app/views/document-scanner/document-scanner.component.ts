@@ -1,5 +1,6 @@
 import { Component, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Router } from '@angular/router';
 import { ScannedItem } from '../../models/scanned-item.interface';
 import { FirebaseService } from '../../controllers/firebase.service';
 
@@ -8,7 +9,7 @@ import { FirebaseService } from '../../controllers/firebase.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './document-scanner.component.html',
-  styleUrl: './document-scanner.component.css'
+  styleUrl: './document-scanner.component.css',
 })
 export class DocumentScannerComponent {
   selectedImage: string | ArrayBuffer | null = null;
@@ -23,6 +24,7 @@ export class DocumentScannerComponent {
 
   constructor(
     private firebaseService: FirebaseService,
+    private router: Router,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -57,7 +59,7 @@ export class DocumentScannerComponent {
     try {
       // Dynamically import Tesseract.js only on the client side
       const Tesseract = await import('tesseract.js');
-      
+
       const worker = await Tesseract.createWorker('eng', 1, {
         logger: (m: any) => {
           this.ocrStatus = m.status;
@@ -72,7 +74,7 @@ export class DocumentScannerComponent {
       } = await worker.recognize(this.selectedImage as string);
       this.ocrResult = text;
       this.parsedItems = this.parseOcrResult(text);
-      
+
       await worker.terminate();
     } catch (error) {
       console.error('OCR Error:', error);
@@ -89,7 +91,9 @@ export class DocumentScannerComponent {
 
     this.uploadInProgress = true;
     try {
-      const imageUrl = await this.firebaseService.uploadRemitoImage(this.selectedFile);
+      const imageUrl = await this.firebaseService.uploadRemitoImage(
+        this.selectedFile
+      );
       await this.firebaseService.saveScannedData(imageUrl, this.parsedItems);
       this.uploadSuccess = true;
     } catch (error) {
@@ -111,11 +115,16 @@ export class DocumentScannerComponent {
     this.uploadSuccess = false;
   }
 
+  onBackToHomepage(): void {
+    this.router.navigate(['/']);
+  }
+
   private parseOcrResult(text: string): ScannedItem[] {
     const items: ScannedItem[] = [];
     const lines = text.split('\n');
 
-    const itemRegex = /^\s*\+?(\d+)\s+(\d{10,})\s+(.*?)(?:\s+L\.\s\w{2,}|-|\s*$)/;
+    const itemRegex =
+      /^\s*\+?(\d+)\s+(\d{10,})\s+(.*?)(?:\s+L\.\s\w{2,}|-|\s*$)/;
 
     for (const line of lines) {
       const match = line.match(itemRegex);
@@ -128,7 +137,7 @@ export class DocumentScannerComponent {
           barcode: parseInt(sku, 10) || null,
           description: description.trim(),
           image: '',
-          reporte: ''
+          reporte: '',
         });
       }
     }
