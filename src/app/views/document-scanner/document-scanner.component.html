@@ -1,4 +1,6 @@
 <div class="scanner-container">
+
+
   <!-- Header -->
   <header class="scanner-header">
     <button
@@ -164,14 +166,14 @@
           </div>
 
           <div *ngIf="ocrResult && !ocrInProgress" class="ocr-result">
-            <div
-              class="raw-text"
-              *ngIf="!parsedItems || parsedItems.length === 0"
-            >
-              <h4>Texto Extraído</h4>
-              <div class="text-content">
-                <pre>{{ ocrResult }}</pre>
-              </div>
+            <div *ngIf="parsedItems && parsedItems.length > 0" class="products-found">
+              <h4>Productos Encontrados: {{ parsedItems.length }}</h4>
+              <p class="success-text">✓ Se encontraron productos en el remito</p>
+            </div>
+            
+            <div *ngIf="!parsedItems || parsedItems.length === 0" class="no-products-found">
+              <h4>No se encontraron productos</h4>
+              <p>El texto extraído no contiene productos válidos. Intenta con otra imagen.</p>
             </div>
           </div>
         </div>
@@ -184,26 +186,78 @@
       class="results-section"
     >
       <div class="results-header">
-        <h3>Datos Extraídos</h3>
-        <p>Por favor, valida que los datos extraídos sean correctos.</p>
+        <h3>Productos del Remito</h3>
+        <p>Revisa y edita los datos extraídos si es necesario. Luego baja para Guardar</p>
+      </div>
+
+      <div class="results-summary">
+        <p><strong>Total de productos:</strong> {{ parsedItems.length }}</p>
+        <p><strong>Cantidad total:</strong> {{ getTotalQuantity() }}</p>
+      </div>
+
+      <div class="table-actions">
+        <button class="btn btn-secondary" (click)="addNewItem()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Agregar Producto
+        </button>
       </div>
 
       <div class="results-table-container">
-        <table class="results-table">
+        <table class="results-table editable">
           <thead>
             <tr>
-              <th>Cant. Pedida</th>
-              <th>Cant. Escaneada</th>
-              <th>SKU</th>
+              <th>Cantidad</th>
+              <th>Código/SKU</th>
               <th>Descripción</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of parsedItems">
-              <td>{{ item.quantity_asked }}</td>
-              <td>{{ item.quantity_scanned }}</td>
-              <td>{{ item.sku }}</td>
-              <td>{{ item.description }}</td>
+            <tr *ngFor="let item of parsedItems; let i = index" class="editable-row">
+              <td>
+                <input 
+                  type="number" 
+                  class="table-input quantity-input"
+                  [value]="item.quantity_asked"
+                  (input)="updateItemQuantity(i, $event)"
+                  min="1"
+                  max="999"
+                />
+              </td>
+              <td>
+                <input 
+                  type="text" 
+                  class="table-input sku-input"
+                  [value]="item.sku"
+                  (input)="updateItemSku(i, $event)"
+                  placeholder="Código del producto"
+                />
+              </td>
+              <td>
+                <input 
+                  type="text" 
+                  class="table-input description-input"
+                  [value]="item.description"
+                  (input)="updateItemDescription(i, $event)"
+                  placeholder="Descripción del producto"
+                />
+              </td>
+              <td>
+                <button 
+                  class="btn-remove" 
+                  (click)="removeItem(i)"
+                  title="Eliminar producto"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18"/>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                  </svg>
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -213,7 +267,7 @@
         <button
           class="btn btn-primary"
           (click)="onConfirmAndSave()"
-          [disabled]="uploadInProgress"
+          [disabled]="uploadInProgress || parsedItems.length === 0"
         >
           <svg
             *ngIf="!uploadInProgress"
