@@ -1,12 +1,17 @@
 import { Injectable } from '@angular/core';
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, Firestore } from 'firebase/firestore';
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  Firestore,
+} from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { environment } from '../../environments/environment';
 import { ScannedItem } from '../models/scanned-item.interface';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class FirebaseService {
   private app: FirebaseApp;
@@ -20,7 +25,10 @@ export class FirebaseService {
   }
 
   async uploadRemitoImage(file: File): Promise<string> {
-    const storageRef = ref(this.storage, `remitos/${new Date().getTime()}_${file.name}`);
+    const storageRef = ref(
+      this.storage,
+      `remitos/${new Date().getTime()}_${file.name}`
+    );
     await uploadBytes(storageRef, file);
     return getDownloadURL(storageRef);
   }
@@ -33,12 +41,12 @@ export class FirebaseService {
         state: 1,
         items,
         imageUrl,
-        createdAt: new Date()
+        createdAt: new Date(),
       };
 
       await addDoc(collection(this.firestore, 'remitos'), remitoData);
     } catch (error) {
-      console.error("Error writing document: ", error);
+      console.error('Error writing document: ', error);
     }
   }
 }
