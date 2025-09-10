@@ -24,7 +24,7 @@ export class FirebaseService {
       
       const remitoData = {
         idnota,
-        state: 1, // 1 = Pending processing
+        state: 0, // 0 = Uploaded/Initial state
         items,
         totalItems: items.length,
         totalQuantity: items.reduce((total, item) => total + item.quantity_asked, 0),
