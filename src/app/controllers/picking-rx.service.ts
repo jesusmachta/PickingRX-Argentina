@@ -1,8 +1,18 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, of, BehaviorSubject } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, switchMap, catchError } from 'rxjs/operators';
+import {
+  Firestore,
+  collection,
+  collectionData,
+  doc,
+  updateDoc,
+  query,
+  orderBy,
+} from '@angular/fire/firestore';
 import {
   ProcessedDeliveryNote,
+  FirebaseDeliveryNote,
   DeliveryNoteStatus,
   StatusConfig,
   PickingRxConfig,
@@ -16,13 +26,16 @@ import { CORPORATE_COLORS } from '../shared/constants/colors';
   providedIn: 'root',
 })
 export class PickingRxService {
+  private firestore = inject(Firestore);
+  private remitosCollection = collection(this.firestore, 'Remitos');
+
   private deliveryNotesSubject = new BehaviorSubject<ProcessedDeliveryNote[]>(
     []
   );
   public deliveryNotes$ = this.deliveryNotesSubject.asObservable();
 
   constructor() {
-    this.initializeMockData();
+    this.loadDeliveryNotesFromFirebase();
   }
 
   /**
@@ -87,27 +100,43 @@ export class PickingRxService {
   }
 
   /**
-   * Actualiza el estado de una nota de entrega
+   * Actualiza el estado de una nota de entrega en Firebase
    */
   updateDeliveryNoteStatus(
     noteId: string,
     newStatus: DeliveryNoteStatus
   ): Observable<boolean> {
-    const currentNotes = this.deliveryNotesSubject.value;
-    const noteIndex = currentNotes.findIndex((note) => note.id === noteId);
+    const noteDocRef = doc(this.firestore, 'Remitos', noteId);
 
-    if (noteIndex !== -1) {
-      const updatedNotes = [...currentNotes];
-      updatedNotes[noteIndex] = {
-        ...updatedNotes[noteIndex],
-        status: newStatus,
-        updatedAt: new Date(),
-      };
-      this.deliveryNotesSubject.next(updatedNotes);
-      return of(true);
-    }
+    return new Observable((observer) => {
+      updateDoc(noteDocRef, {
+        state: newStatus,
+      })
+        .then(() => {
+          // Actualizar el estado local también
+          const currentNotes = this.deliveryNotesSubject.value;
+          const noteIndex = currentNotes.findIndex(
+            (note) => note.id === noteId
+          );
 
-    return of(false);
+          if (noteIndex !== -1) {
+            const updatedNotes = [...currentNotes];
+            updatedNotes[noteIndex] = {
+              ...updatedNotes[noteIndex],
+              status: newStatus,
+            };
+            this.deliveryNotesSubject.next(updatedNotes);
+          }
+
+          observer.next(true);
+          observer.complete();
+        })
+        .catch((error) => {
+          console.error('Error updating delivery note status:', error);
+          observer.next(false);
+          observer.complete();
+        });
+    });
   }
 
   /**
@@ -169,139 +198,107 @@ export class PickingRxService {
   }
 
   /**
-   * Inicializa datos de prueba
+   * Carga las notas de entrega desde Firebase
    */
-  private initializeMockData(): void {
-    const mockNotes: ProcessedDeliveryNote[] = [
-      {
-        id: '65199871',
-        orderNumber: '65199871',
-        status: DeliveryNoteStatus.POR_PREPARAR,
-        items: [
-          {
-            quantity_asked: 1,
-            quantity_scanned: 0,
-            sku: '00436',
-            barcode: 114800436,
-            description: 'Amoxicilina + Ácido Clavulánico 600mg/42.9mg/5ml',
-            image: 'https://via.placeholder.com/150x150?text=Amoxicilina',
-            reporte: '',
-          },
-          {
-            quantity_asked: 1,
-            quantity_scanned: 0,
-            sku: '00198',
-            barcode: 114800198,
-            description: 'Diclofenaco Potásico 9mg/5ml',
-            image: 'https://via.placeholder.com/150x150?text=Diclofenaco',
-            reporte: '',
-          },
-        ],
-        totalItems: 2,
-        scannedItems: 0,
-        progressPercentage: 0,
-        clientName: 'Juan Pérez',
-        address: 'Av. Principal 123, Caracas',
-        priority: 'high',
-        createdAt: new Date('2024-09-10T15:30:00'),
-        updatedAt: new Date('2024-09-10T15:30:00'),
-        estimatedDeliveryTime: new Date('2024-09-10T18:00:00'),
-      },
-      {
-        id: '65199872',
-        orderNumber: '65199872',
-        status: DeliveryNoteStatus.PREPARANDO,
-        items: [
-          {
-            quantity_asked: 1,
-            quantity_scanned: 1,
-            sku: '00436',
-            barcode: 114800436,
-            description: 'Amoxicilina + Ácido Clavulánico 600mg/42.9mg/5ml',
-            image: 'https://via.placeholder.com/150x150?text=Amoxicilina',
-            reporte: '',
-          },
-          {
-            quantity_asked: 1,
-            quantity_scanned: 0,
-            sku: '70494',
-            barcode: 115770494,
-            description: 'Dolcan Pediátrico Megalabs Suspensión Oral x 120 ml',
-            image: 'https://via.placeholder.com/150x150?text=Dolcan',
-            reporte: '',
-          },
-        ],
-        totalItems: 2,
-        scannedItems: 1,
-        progressPercentage: 50,
-        clientName: 'María González',
-        address: 'Calle 2 #45-67, Valencia',
-        priority: 'medium',
-        createdAt: new Date('2024-09-10T14:15:00'),
-        updatedAt: new Date('2024-09-10T16:00:00'),
-        estimatedDeliveryTime: new Date('2024-09-10T17:30:00'),
-      },
-      {
-        id: '65199873',
-        orderNumber: '65199873',
-        status: DeliveryNoteStatus.LISTO,
-        items: [
-          {
-            quantity_asked: 1,
-            quantity_scanned: 1,
-            sku: '00436',
-            barcode: 114800436,
-            description: 'Amoxicilina + Ácido Clavulánico 600mg/42.9mg/5ml',
-            image: 'https://via.placeholder.com/150x150?text=Amoxicilina',
-            reporte: '',
-          },
-        ],
-        totalItems: 1,
-        scannedItems: 1,
-        progressPercentage: 100,
-        clientName: 'Carlos Rodríguez',
-        address: 'Urbanización Los Pinos, Casa 15',
-        priority: 'low',
-        createdAt: new Date('2024-09-10T13:45:00'),
-        updatedAt: new Date('2024-09-10T16:30:00'),
-        estimatedDeliveryTime: new Date('2024-09-10T17:00:00'),
-      },
-      {
-        id: '65199874',
-        orderNumber: '65199874',
-        status: DeliveryNoteStatus.FALTAN_PRODUCTOS,
-        items: [
-          {
-            quantity_asked: 1,
-            quantity_scanned: 0,
-            sku: '00436',
-            barcode: 114800436,
-            description: 'Amoxicilina + Ácido Clavulánico 600mg/42.9mg/5ml',
-            image: 'https://via.placeholder.com/150x150?text=Amoxicilina',
-            reporte: '',
-          },
-          {
-            quantity_asked: 1,
-            quantity_scanned: 0,
-            sku: '70494',
-            barcode: 115770494,
-            description: 'Dolcan Pediátrico Megalabs Suspensión Oral x 120 ml',
-            image: 'https://via.placeholder.com/150x150?text=Dolcan',
-            reporte: 'missing: Producto no disponible en inventario',
-          },
-        ],
-        totalItems: 2,
-        scannedItems: 0,
-        progressPercentage: 0,
-        clientName: 'Ana Martínez',
-        address: 'Centro Comercial Plaza, Local 8',
-        priority: 'high',
-        createdAt: new Date('2024-09-10T12:30:00'),
-        updatedAt: new Date('2024-09-10T15:45:00'),
-        estimatedDeliveryTime: new Date('2024-09-10T19:00:00'),
-      },
-    ];
+  private loadDeliveryNotesFromFirebase(): void {
+    // Obtener todos los documentos sin ordenamiento específico
+    // ya que los campos de fecha fueron removidos
 
-    this.deliveryNotesSubject.next(mockNotes);
+    // Obtener datos en tiempo real
+    collectionData(this.remitosCollection, { idField: 'id' })
+      .pipe(
+        map((firebaseNotes: any[]) => {
+          console.log('Datos crudos de Firebase:', firebaseNotes);
+          return firebaseNotes.map((note) =>
+            this.convertFirebaseToProcessed(note)
+          );
+        }),
+        catchError((error) => {
+          console.error('Error al obtener datos de Firebase:', error);
+          // En caso de error, usar datos vacíos
+          return of([]);
+        })
+      )
+      .subscribe({
+        next: (processedNotes) => {
+          console.log('Notas procesadas:', processedNotes);
+          this.deliveryNotesSubject.next(processedNotes);
+        },
+        error: (error) => {
+          console.error('Error en la suscripción:', error);
+          this.deliveryNotesSubject.next([]);
+        },
+      });
+  }
+
+  /**
+   * Convierte un documento de Firebase al formato procesado para la UI
+   */
+  private convertFirebaseToProcessed(firebaseNote: any): ProcessedDeliveryNote {
+    console.log('🔄 Documento original:', firebaseNote);
+    console.log('🔄 Items raw:', firebaseNote.items);
+    console.log('🔄 Tipo de items:', typeof firebaseNote.items);
+
+    // Asegurar que items sea un array
+    let items: DeliveryItem[] = [];
+
+    if (Array.isArray(firebaseNote.items)) {
+      items = firebaseNote.items;
+    } else if (firebaseNote.items && typeof firebaseNote.items === 'object') {
+      // Si items es un objeto, convertir a array
+      items = Object.values(firebaseNote.items);
+    }
+
+    console.log('🔄 Items procesados:', items);
+
+    const scannedItems = items.reduce(
+      (count, item) => count + (item.quantity_scanned || 0),
+      0
+    );
+    const totalItems = items.reduce(
+      (count, item) => count + (item.quantity_asked || 0),
+      0
+    );
+    const progressPercentage =
+      totalItems > 0 ? Math.round((scannedItems / totalItems) * 100) : 0;
+
+    console.log(
+      '📊 Calculados - Scanned:',
+      scannedItems,
+      'Total:',
+      totalItems,
+      'Progress:',
+      progressPercentage
+    );
+
+    return {
+      id: firebaseNote.id || firebaseNote.idnota,
+      orderNumber: firebaseNote.idnota || firebaseNote.id,
+      status: this.mapFirebaseStateToStatus(firebaseNote.state),
+      items: items,
+      totalItems: totalItems,
+      scannedItems: scannedItems,
+      progressPercentage: progressPercentage,
+      createdAt: new Date(),
+      estimatedDeliveryTime: firebaseNote.estimatedDeliveryTime?.toDate?.(),
+    };
+  }
+
+  /**
+   * Mapea el estado numérico de Firebase al enum DeliveryNoteStatus
+   */
+  private mapFirebaseStateToStatus(state: number): DeliveryNoteStatus {
+    switch (state) {
+      case 0:
+        return DeliveryNoteStatus.POR_PREPARAR;
+      case 1:
+        return DeliveryNoteStatus.PREPARANDO;
+      case 2:
+        return DeliveryNoteStatus.LISTO;
+      case 3:
+        return DeliveryNoteStatus.FALTAN_PRODUCTOS;
+      default:
+        return DeliveryNoteStatus.POR_PREPARAR;
+    }
   }
 }
