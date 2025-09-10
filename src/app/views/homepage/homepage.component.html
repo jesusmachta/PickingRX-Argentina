@@ -1,0 +1,102 @@
+<div class="homepage-container">
+  <!-- Header con logo de la empresa -->
+  <header class="homepage-header">
+    <div class="company-logo">
+      <img
+        src="assets/FTD/logo farmatodo.png"
+        alt="Farmatodo Logo"
+        class="logo-image"
+      />
+    </div>
+
+    <div class="header-content">
+      <div class="app-icon">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="1" y="3" width="15" height="13" />
+          <polygon points="16,8 20,8 23,11 23,16 16,16" />
+          <circle cx="5.5" cy="18.5" r="2.5" />
+          <circle cx="18.5" cy="18.5" r="2.5" />
+        </svg>
+      </div>
+      <h1 class="app-title">PickingRX Argentina</h1>
+    </div>
+  </header>
+
+  <!-- Contenido principal -->
+  <main class="homepage-main" *ngIf="homepageConfig">
+    <!-- Título -->
+    <div class="page-header">
+      <h2 class="page-title">{{ homepageConfig.title }}</h2>
+      <p class="page-subtitle" *ngIf="homepageConfig.subtitle">
+        {{ homepageConfig.subtitle }}
+      </p>
+    </div>
+
+    <!-- Selector de funcionalidad -->
+    <section class="functionality-section">
+      <h3 class="section-title">Selecciona una funcionalidad</h3>
+
+      <div class="functionality-grid">
+        <div
+          *ngFor="let functionality of homepageConfig.functionalities"
+          class="functionality-card"
+          [class.disabled]="!functionality.isEnabled"
+          (click)="onFunctionalityClick(functionality)"
+          [attr.aria-label]="
+            functionality.title + ': ' + functionality.description
+          "
+        >
+          <div class="card-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="1" y="3" width="15" height="13" />
+              <polygon points="16,8 20,8 23,11 23,16 16,16" />
+              <circle cx="5.5" cy="18.5" r="2.5" />
+              <circle cx="18.5" cy="18.5" r="2.5" />
+            </svg>
+          </div>
+
+          <div class="card-content">
+            <h4 class="card-title">{{ functionality.title }}</h4>
+            <p class="card-description">{{ functionality.description }}</p>
+          </div>
+
+          <div class="card-arrow">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>

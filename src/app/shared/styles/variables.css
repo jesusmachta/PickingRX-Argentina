@@ -1,0 +1,43 @@
+:root {
+  /* Colores */
+  --color-primary: #002858;
+  --color-secondary-blue: #0084dd;
+  --color-teal: #00a19a;
+  --color-yellow: #a1a100;
+  --color-purple: #4a106e;
+  --color-white: #ffffff;
+  --color-light-gray: #f5f5f5;
+  --color-gray: #cccccc;
+  --color-dark-gray: #333333;
+  --color-black: #000000;
+
+  /* Efectos */
+  --gradient-primary: linear-gradient(135deg, #002858 0%, #0084dd 100%);
+  --shadow-light: 0 2px 4px rgba(0, 40, 88, 0.1);
+  --shadow-medium: 0 4px 8px rgba(0, 40, 88, 0.15);
+  --shadow-heavy: 0 8px 16px rgba(0, 40, 88, 0.2);
+  --transition-fast: 0.2s ease;
+  --transition-medium: 0.3s ease;
+
+  /* Tipografía */
+  --font-family-primary: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-size-small: 0.875rem;
+  --font-size-medium: 1rem;
+  --font-size-large: 1.25rem;
+  --font-size-xl: 1.5rem;
+  --font-size-xxl: 2rem;
+
+  /* Espaciado */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-xxl: 3rem;
+
+  /* Bordes */
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+}
