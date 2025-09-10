@@ -247,66 +247,6 @@
         </div>
       </div>
     </section>
-
-    <!-- Status Actions -->
-    <section class="status-actions" *ngIf="config.canUpdateStatus">
-      <div class="actions-container">
-        <!-- Mark as Ready -->
-        <button
-          class="status-button ready-button"
-          (click)="onUpdateStatus(DeliveryNoteStatus.LISTO)"
-          [disabled]="!canMarkAsReady()"
-          *ngIf="config.note.status !== DeliveryNoteStatus.LISTO"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"
-            />
-            <path d="m9 12 2 2 4-4" />
-          </svg>
-          Marcar como Listo
-        </button>
-
-        <!-- Mark as Missing Products -->
-        <button
-          class="status-button missing-button"
-          (click)="onUpdateStatus(DeliveryNoteStatus.FALTAN_PRODUCTOS)"
-          *ngIf="
-            hasReportedItems() &&
-            config.note.status !== DeliveryNoteStatus.FALTAN_PRODUCTOS
-          "
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"
-            />
-            <path d="M12 9v4" />
-            <path d="m12 17 .01 0" />
-          </svg>
-          Faltan Productos
-        </button>
-      </div>
-    </section>
   </div>
 
   <!-- Report Modal -->

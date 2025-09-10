@@ -20,8 +20,7 @@ import {
 })
 export class PickingRxComponent implements OnInit, OnDestroy {
   pickingRxConfig: PickingRxConfig | null = null;
-  selectedStatus: DeliveryNoteStatus | null = null;
-  deliveryNotes: ProcessedDeliveryNote[] = [];
+  deliveryNotesByStatus: { [key: number]: ProcessedDeliveryNote[] } = {};
   isLoading = true;
 
   private destroy$ = new Subject<void>();
@@ -41,7 +40,7 @@ export class PickingRxComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Carga la configuración de Picking RX
+   * Carga la configuración de Picking RX y todas las notas por estado
    */
   private loadPickingRxConfig(): void {
     this.pickingRxService
@@ -50,7 +49,7 @@ export class PickingRxComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (config) => {
           this.pickingRxConfig = config;
-          this.isLoading = false;
+          this.loadAllDeliveryNotes();
         },
         error: (error) => {
           console.error(
@@ -63,36 +62,43 @@ export class PickingRxComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Maneja el clic en una tarjeta de estado
+   * Carga todas las notas de entrega organizadas por estado
    */
-  onStatusCardClick(statusConfig: StatusConfig): void {
-    this.selectedStatus = statusConfig.status;
-    this.loadDeliveryNotesByStatus(statusConfig.status);
+  private loadAllDeliveryNotes(): void {
+    // Solo mostrar Por Preparar y Preparando
+    const statusesToShow = [
+      DeliveryNoteStatus.POR_PREPARAR,
+      DeliveryNoteStatus.PREPARANDO,
+    ];
+
+    // Inicializar con arrays vacíos
+    statusesToShow.forEach((status) => {
+      this.deliveryNotesByStatus[status] = [];
+    });
+
+    // Cargar por separado cada estado
+    this.loadNotesForStatus(DeliveryNoteStatus.POR_PREPARAR);
+    this.loadNotesForStatus(DeliveryNoteStatus.PREPARANDO);
+
+    // Quitar loading después de un breve delay para asegurar que se cargue todo
+    setTimeout(() => {
+      this.isLoading = false;
+    }, 1000);
   }
 
-  /**
-   * Carga las notas de entrega por estado
-   */
-  private loadDeliveryNotesByStatus(status: DeliveryNoteStatus): void {
+  private loadNotesForStatus(status: DeliveryNoteStatus): void {
     this.pickingRxService
       .getDeliveryNotesByStatus(status)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (notes) => {
-          this.deliveryNotes = notes;
+          this.deliveryNotesByStatus[status] = notes;
         },
         error: (error) => {
-          console.error('Error al cargar las notas de entrega:', error);
+          console.error(`Error al cargar notas del estado ${status}:`, error);
+          this.deliveryNotesByStatus[status] = [];
         },
       });
-  }
-
-  /**
-   * Vuelve a la vista principal
-   */
-  onBackToMain(): void {
-    this.selectedStatus = null;
-    this.deliveryNotes = [];
   }
 
   /**
@@ -110,27 +116,25 @@ export class PickingRxComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Actualiza el estado de una nota de entrega
+   * Obtiene las notas de entrega por estado
    */
-  onUpdateNoteStatus(noteId: string, newStatus: DeliveryNoteStatus): void {
-    this.pickingRxService
-      .updateDeliveryNoteStatus(noteId, newStatus)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (success) => {
-          if (success) {
-            // Recargar la configuración para actualizar contadores
-            this.loadPickingRxConfig();
-            // Si estamos viendo una lista específica, recargarla
-            if (this.selectedStatus) {
-              this.loadDeliveryNotesByStatus(this.selectedStatus);
-            }
-          }
-        },
-        error: (error) => {
-          console.error('Error al actualizar el estado de la nota:', error);
-        },
-      });
+  getDeliveryNotesByStatus(
+    status: DeliveryNoteStatus
+  ): ProcessedDeliveryNote[] {
+    return this.deliveryNotesByStatus[status] || [];
+  }
+
+  /**
+   * Obtiene la configuración de estado filtrada (solo Por Preparar y Preparando)
+   */
+  getVisibleStatusConfigs(): StatusConfig[] {
+    if (!this.pickingRxConfig) return [];
+
+    return this.pickingRxConfig.statusList.filter(
+      (config) =>
+        config.status === DeliveryNoteStatus.POR_PREPARAR ||
+        config.status === DeliveryNoteStatus.PREPARANDO
+    );
   }
 
   /**

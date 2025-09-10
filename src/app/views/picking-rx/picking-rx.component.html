@@ -66,241 +66,150 @@
 
   <!-- Main Content -->
   <main class="picking-rx-main" *ngIf="!isLoading && pickingRxConfig">
-    <!-- Vista Principal - Estados -->
-    <div class="status-overview" *ngIf="!selectedStatus">
+    <!-- Vista Principal - Todas las notas organizadas por estado -->
+    <div class="status-overview">
       <div class="section-header">
-        <h2 class="section-title">Estados de Notas de Entrega</h2>
+        <h2 class="section-title">Notas de Entrega por Estado</h2>
         <p class="section-description">
-          Selecciona un estado para ver los pedidos correspondientes
+          Gestión de pedidos organizados por estado
         </p>
       </div>
 
-      <div class="status-grid">
+      <!-- Por cada estado visible, mostrar su sección -->
+      <div
+        *ngFor="let statusConfig of getVisibleStatusConfigs()"
+        class="status-section"
+      >
+        <!-- Header de estado -->
         <div
-          *ngFor="let statusConfig of pickingRxConfig.statusList"
-          class="status-card"
+          class="status-section-header"
           [style.border-left-color]="statusConfig.color"
-          (click)="onStatusCardClick(statusConfig)"
-          [attr.aria-label]="
-            statusConfig.title + ': ' + statusConfig.count + ' pedidos'
-          "
         >
-          <div class="status-header">
-            <div
-              class="status-icon"
-              [style.background-color]="statusConfig.color"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+          <div class="status-info">
+            <div class="status-icon-title">
+              <div
+                class="status-icon"
+                [style.background-color]="statusConfig.color"
               >
-                <!-- Íconos dinámicos según el tipo -->
-                <g *ngIf="statusConfig.icon === 'clock'">
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12,6 12,12 16,14" />
-                </g>
-                <g *ngIf="statusConfig.icon === 'package'">
-                  <path d="m7.5 4.27 9 5.15" />
-                  <path
-                    d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"
-                  />
-                  <path d="m3.3 7 8.7 5 8.7-5" />
-                  <path d="M12 22V12" />
-                </g>
-                <g *ngIf="statusConfig.icon === 'check-circle'">
-                  <path
-                    d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"
-                  />
-                  <path d="m9 12 2 2 4-4" />
-                </g>
-                <g *ngIf="statusConfig.icon === 'alert-triangle'">
-                  <path
-                    d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"
-                  />
-                  <path d="M12 9v4" />
-                  <path d="m12 17 .01 0" />
-                </g>
-              </svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <!-- Íconos dinámicos según el tipo -->
+                  <g *ngIf="statusConfig.icon === 'clock'">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12,6 12,12 16,14" />
+                  </g>
+                  <g *ngIf="statusConfig.icon === 'package'">
+                    <path d="m7.5 4.27 9 5.15" />
+                    <path
+                      d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"
+                    />
+                    <path d="m3.3 7 8.7 5 8.7-5" />
+                    <path d="M12 22V12" />
+                  </g>
+                </svg>
+              </div>
+              <h3 class="status-title">{{ statusConfig.title }}</h3>
             </div>
             <div class="status-count" [style.color]="statusConfig.color">
               {{ statusConfig.count }}
+              {{ statusConfig.count === 1 ? "pedido" : "pedidos" }}
             </div>
           </div>
-
-          <div class="status-content">
-            <h3 class="status-title">{{ statusConfig.title }}</h3>
-            <p class="status-description">{{ statusConfig.description }}</p>
-          </div>
-
-          <div class="status-arrow">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="m9 18 6-6-6-6" />
-            </svg>
-          </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Vista de Lista - Notas de Entrega por Estado -->
-    <div class="delivery-notes-view" *ngIf="selectedStatus">
-      <div class="section-header">
-        <button class="back-button-secondary" (click)="onBackToMain()">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="m15 18-6-6 6-6" />
-          </svg>
-          Volver
-        </button>
-        <h2 class="section-title">{{ getStatusText(selectedStatus) }}</h2>
-        <div class="notes-count">
-          {{ deliveryNotes.length }}
-          {{ deliveryNotes.length === 1 ? "pedido" : "pedidos" }}
-        </div>
-      </div>
-
-      <!-- Lista de Notas de Entrega -->
-      <div
-        class="delivery-notes-list"
-        *ngIf="deliveryNotes.length > 0; else noNotesTemplate"
-      >
+        <!-- Lista de notas para este estado -->
         <div
-          *ngFor="let note of deliveryNotes"
-          class="delivery-note-card"
-          [class]="getPriorityClass(note.priority || 'low')"
-          (click)="onDeliveryNoteClick(note)"
+          class="delivery-notes-list"
+          *ngIf="
+            getDeliveryNotesByStatus(statusConfig.status).length > 0;
+            else emptyStatusTemplate
+          "
         >
-          <div class="note-header">
-            <div class="note-order-info">
-              <h3 class="note-order-number">#{{ note.orderNumber }}</h3>
-              <span class="note-priority priority-{{ note.priority || 'low' }}">
-                {{
-                  (note.priority || "low") === "high"
-                    ? "Alta"
-                    : (note.priority || "low") === "medium"
-                    ? "Media"
-                    : "Baja"
-                }}
-              </span>
+          <div
+            *ngFor="let note of getDeliveryNotesByStatus(statusConfig.status)"
+            class="delivery-note-card"
+            [class]="getPriorityClass(note.priority || 'low')"
+            (click)="onDeliveryNoteClick(note)"
+          >
+            <div class="note-header">
+              <div class="note-order-info">
+                <h3 class="note-order-number">#{{ note.orderNumber }}</h3>
+                <span
+                  class="note-priority priority-{{ note.priority || 'low' }}"
+                >
+                  {{
+                    (note.priority || "low") === "high"
+                      ? "Alta"
+                      : (note.priority || "low") === "medium"
+                      ? "Media"
+                      : "Baja"
+                  }}
+                </span>
+              </div>
+              <div class="note-time" *ngIf="note.createdAt">
+                <span class="time-label">Creado:</span>
+                <span class="time-value">{{ formatTime(note.createdAt) }}</span>
+              </div>
             </div>
-            <div class="note-time" *ngIf="note.createdAt">
-              <span class="time-label">Creado:</span>
-              <span class="time-value">{{ formatTime(note.createdAt) }}</span>
-            </div>
-          </div>
 
-          <div class="note-content">
-            <div class="note-client">
-              <div class="client-info">
-                <h4 class="client-name">{{ note.clientName || "Cliente" }}</h4>
-                <p class="client-address">
-                  {{ note.address || "Dirección no disponible" }}
+            <div class="note-content">
+              <div class="note-summary">
+                <p class="items-count">
+                  {{ note.totalItems }}
+                  {{ note.totalItems === 1 ? "producto" : "productos" }}
                 </p>
               </div>
             </div>
 
-            <div class="note-items">
-              <p class="items-count">
-                {{ note.totalItems }}
-                {{ note.totalItems === 1 ? "producto" : "productos" }}
-              </p>
-              <div class="items-preview">
-                <div
-                  *ngFor="let item of note.items | slice : 0 : 2"
-                  class="item-preview"
-                  [class.unavailable]="!!item.reporte"
+            <div class="note-footer">
+              <div class="note-actions">
+                <button
+                  class="action-button primary"
+                  (click)="onDeliveryNoteClick(note); $event.stopPropagation()"
+                  aria-label="Ver detalles del pedido"
                 >
-                  <span class="item-name">{{ item.description }}</span>
-                  <span class="item-quantity"
-                    >{{ item.quantity_scanned }}/{{ item.quantity_asked }}</span
-                  >
-                </div>
-                <div *ngIf="note.items.length > 2" class="items-more">
-                  +{{ note.items.length - 2 }} más
-                </div>
-              </div>
-              <div class="progress-info">
-                <span class="progress-text"
-                  >{{ note.progressPercentage }}% completado</span
-                >
+                  Ver Detalles
+                </button>
               </div>
             </div>
           </div>
+        </div>
 
-          <div class="note-footer">
-            <div class="note-estimated-time" *ngIf="note.estimatedDeliveryTime">
-              <span class="time-label">Entrega estimada:</span>
-              <span class="time-value">{{
-                formatTime(note.estimatedDeliveryTime)
-              }}</span>
-            </div>
-            <div class="note-actions">
-              <button
-                class="action-button primary"
-                (click)="onDeliveryNoteClick(note); $event.stopPropagation()"
-                aria-label="Ver detalles del pedido"
+        <!-- Estado vacío para esta sección -->
+        <ng-template #emptyStatusTemplate>
+          <div class="empty-status-section">
+            <div class="empty-icon">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
               >
-                Ver Detalles
-              </button>
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+                <path d="M3 6h18" />
+                <path d="M16 10a4 4 0 0 1-8 0" />
+              </svg>
             </div>
+            <p class="empty-message">
+              No hay pedidos {{ statusConfig.title.toLowerCase() }}
+            </p>
           </div>
-        </div>
+        </ng-template>
       </div>
-
-      <!-- Estado vacío -->
-      <ng-template #noNotesTemplate>
-        <div class="empty-state">
-          <div class="empty-icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="64"
-              height="64"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
-              <path d="M3 6h18" />
-              <path d="M16 10a4 4 0 0 1-8 0" />
-            </svg>
-          </div>
-          <h3 class="empty-title">
-            No hay pedidos {{ getStatusText(selectedStatus).toLowerCase() }}
-          </h3>
-          <p class="empty-description">
-            Los pedidos que marques como "{{ getStatusText(selectedStatus) }}"
-            aparecerán aquí.
-          </p>
-        </div>
-      </ng-template>
     </div>
   </main>
 </div>
