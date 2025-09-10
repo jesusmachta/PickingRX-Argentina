@@ -31,7 +31,13 @@ export class DocumentScannerComponent {
     if (input.files && input.files[0]) {
       this.selectedFile = input.files[0];
       const reader = new FileReader();
-      reader.onload = (e) => (this.selectedImage = e.target?.result || null);
+      reader.onload = (e) => {
+        this.selectedImage = e.target?.result || null;
+        // Automatically run OCR after image is loaded
+        if (this.selectedImage) {
+          setTimeout(() => this.recognizeImage(), 500);
+        }
+      };
       reader.readAsDataURL(this.selectedFile);
     }
   }
@@ -91,6 +97,18 @@ export class DocumentScannerComponent {
     } finally {
       this.uploadInProgress = false;
     }
+  }
+
+  resetScanner(): void {
+    this.selectedImage = null;
+    this.selectedFile = null;
+    this.ocrResult = null;
+    this.parsedItems = null;
+    this.ocrInProgress = false;
+    this.ocrProgress = 0;
+    this.ocrStatus = '';
+    this.uploadInProgress = false;
+    this.uploadSuccess = false;
   }
 
   private parseOcrResult(text: string): ScannedItem[] {

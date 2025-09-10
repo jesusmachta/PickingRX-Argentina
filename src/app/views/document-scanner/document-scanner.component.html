@@ -1,76 +1,181 @@
 <div class="scanner-container">
-  <h2>Escanear Remito</h2>
-  <p>Selecciona una imagen de un remito para extraer el texto.</p>
-
-  <div class="upload-section">
-    <input
-      type="file"
-      (change)="onFileChange($event)"
-      accept="image/*"
-      #fileInput
-      hidden
-    />
-    <button (click)="fileInput.click()" class="btn btn-primary">
-      Subir Imagen
-    </button>
-  </div>
-
-  <div *ngIf="selectedImage" class="preview-section">
-    <h3>Vista Previa</h3>
-    <img [src]="selectedImage" alt="Vista previa del remito" />
-  </div>
-
-  <div *ngIf="selectedImage" class="action-section">
-    <button (click)="recognizeImage()" class="btn btn-secondary" [disabled]="ocrInProgress">
-      {{ ocrInProgress ? 'Procesando...' : 'Extraer Texto' }}
-    </button>
-  </div>
-
-  <div *ngIf="ocrInProgress" class="progress-section">
-    <p>{{ ocrStatus }}</p>
-    <progress [value]="ocrProgress" max="100"></progress>
-  </div>
-
-  <div *ngIf="parsedItems && parsedItems.length > 0" class="result-section">
-    <h3>Datos Extraídos</h3>
-    <p>Por favor, valida que los datos extraídos sean correctos.</p>
-    
-    <table class="results-table">
-      <thead>
-        <tr>
-          <th>Cant. Pedida</th>
-          <th>Cant. Escaneada</th>
-          <th>SKU</th>
-          <th>Descripción</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of parsedItems">
-          <td>{{ item.quantity_asked }}</td>
-          <td>{{ item.quantity_scanned }}</td>
-          <td>{{ item.sku }}</td>
-          <td>{{ item.description }}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="action-section">
-      <button 
-        class="btn btn-primary" 
-        (click)="onConfirmAndSave()" 
-        [disabled]="uploadInProgress">
-        {{ uploadInProgress ? 'Guardando...' : 'Confirmar y Guardar' }}
-      </button>
+  <!-- Header -->
+  <header class="scanner-header">
+    <div class="header-content">
+      <div class="app-icon">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+          />
+          <circle cx="12" cy="13" r="4" />
+        </svg>
+      </div>
+      <h1 class="page-title">Escanear Remito</h1>
     </div>
-  </div>
+  </header>
 
-  <div *ngIf="ocrResult && (!parsedItems || parsedItems.length === 0)" class="result-section">
-    <h3>No se pudieron extraer datos estructurados</h3>
-    <p>A continuación se muestra el texto completo extraído de la imagen:</p>
-    <pre>{{ ocrResult }}</pre>
-  </div>
+  <!-- Main content -->
+  <main class="scanner-main">
+    <div class="page-header">
+      <p class="page-subtitle">Selecciona una imagen de un remito para extraer el texto automáticamente</p>
+    </div>
 
-  <div *ngIf="uploadSuccess" class="success-message">
-    <p>¡Remito guardado con éxito!</p>
-  </div>
+    <!-- Upload section -->
+    <section class="upload-section" *ngIf="!selectedImage">
+      <div class="upload-options">
+        <input
+          type="file"
+          (change)="onFileChange($event)"
+          accept="image/*"
+          #fileInput
+          hidden
+        />
+        <input
+          type="file"
+          (change)="onFileChange($event)"
+          accept="image/*"
+          capture="environment"
+          #cameraInput
+          hidden
+        />
+        
+        <div class="upload-card" (click)="fileInput.click()">
+          <div class="upload-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7,10 12,15 17,10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </div>
+          <h3>Subir Imagen</h3>
+          <p>Selecciona una imagen desde tu dispositivo</p>
+        </div>
+
+        <div class="upload-card" (click)="cameraInput.click()">
+          <div class="upload-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </div>
+          <h3>Usar Cámara</h3>
+          <p>Toma una foto directamente con la cámara</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Preview and OCR section -->
+    <section *ngIf="selectedImage" class="preview-section">
+      <div class="preview-container">
+        <div class="image-preview">
+          <div class="image-header">
+            <h3>Vista Previa</h3>
+            <button class="btn-reset" (click)="resetScanner()" title="Seleccionar otra imagen">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18"/>
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+              </svg>
+            </button>
+          </div>
+          <img [src]="selectedImage" alt="Vista previa del remito" />
+        </div>
+        
+        <div class="ocr-preview">
+          <h3>Procesamiento OCR</h3>
+          
+          <div *ngIf="ocrInProgress" class="progress-container">
+            <p class="ocr-status">{{ ocrStatus }}</p>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="ocrProgress"></div>
+            </div>
+            <span class="progress-text">{{ ocrProgress.toFixed(0) }}%</span>
+          </div>
+
+          <div *ngIf="ocrResult && !ocrInProgress" class="ocr-result">
+            <div class="raw-text" *ngIf="!parsedItems || parsedItems.length === 0">
+              <h4>Texto Extraído</h4>
+              <div class="text-content">
+                <pre>{{ ocrResult }}</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results section -->
+    <section *ngIf="parsedItems && parsedItems.length > 0" class="results-section">
+      <div class="results-header">
+        <h3>Datos Extraídos</h3>
+        <p>Por favor, valida que los datos extraídos sean correctos.</p>
+      </div>
+      
+      <div class="results-table-container">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Cant. Pedida</th>
+              <th>Cant. Escaneada</th>
+              <th>SKU</th>
+              <th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of parsedItems">
+              <td>{{ item.quantity_asked }}</td>
+              <td>{{ item.quantity_scanned }}</td>
+              <td>{{ item.sku }}</td>
+              <td>{{ item.description }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="action-section">
+        <button 
+          class="btn btn-primary" 
+          (click)="onConfirmAndSave()" 
+          [disabled]="uploadInProgress">
+          <svg *ngIf="!uploadInProgress" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20,6 9,17 4,12"/>
+          </svg>
+          <svg *ngIf="uploadInProgress" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spinner">
+            <line x1="12" y1="2" x2="12" y2="6"/>
+            <line x1="12" y1="18" x2="12" y2="22"/>
+            <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+            <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+            <line x1="2" y1="12" x2="6" y2="12"/>
+            <line x1="18" y1="12" x2="22" y2="12"/>
+            <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
+            <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+          </svg>
+          {{ uploadInProgress ? 'Guardando...' : 'Confirmar y Guardar' }}
+        </button>
+      </div>
+    </section>
+
+    <!-- Success message -->
+    <section *ngIf="uploadSuccess" class="success-section">
+      <div class="success-card">
+        <div class="success-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20,6 9,17 4,12"/>
+          </svg>
+        </div>
+        <h3>¡Remito guardado con éxito!</h3>
+        <p>Los datos han sido procesados y almacenados correctamente.</p>
+      </div>
+    </section>
+  </main>
 </div>
