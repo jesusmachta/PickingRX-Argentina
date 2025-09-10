@@ -3,6 +3,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { ScannedItem } from '../../models/scanned-item.interface';
 import { FirebaseService } from '../../controllers/firebase.service';
+import { OcrService } from '../../controllers/ocr.service';
 
 @Component({
   selector: 'app-document-scanner',
@@ -25,6 +26,7 @@ export class DocumentScannerComponent {
   constructor(
     private firebaseService: FirebaseService,
     private router: Router,
+    private ocrService: OcrService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -57,28 +59,20 @@ export class DocumentScannerComponent {
     this.ocrStatus = 'Initializing...';
 
     try {
-      // Dynamically import Tesseract.js only on the client side
-      const Tesseract = await import('tesseract.js');
-
-      const worker = await Tesseract.createWorker('eng', 1, {
-        logger: (m: any) => {
-          this.ocrStatus = m.status;
-          if (m.status === 'recognizing text') {
-            this.ocrProgress = m.progress * 100;
-          }
-        },
-      });
-
-      const {
-        data: { text },
-      } = await worker.recognize(this.selectedImage as string);
+      const text = await this.ocrService.recognizeText(
+        this.selectedImage as string,
+        (status: string, progress: number) => {
+          this.ocrStatus = status;
+          this.ocrProgress = progress;
+        }
+      );
+      
       this.ocrResult = text;
       this.parsedItems = this.parseOcrResult(text);
-
-      await worker.terminate();
+      this.ocrStatus = 'Processing completed';
     } catch (error) {
       console.error('OCR Error:', error);
-      this.ocrResult = 'Error during OCR processing.';
+      this.ocrResult = `Error during OCR processing: ${error instanceof Error ? error.message : 'Unknown error'}`;
     } finally {
       this.ocrInProgress = false;
     }
@@ -123,22 +117,69 @@ export class DocumentScannerComponent {
     const items: ScannedItem[] = [];
     const lines = text.split('\n');
 
-    const itemRegex =
-      /^\s*\+?(\d+)\s+(\d{10,})\s+(.*?)(?:\s+L\.\s\w{2,}|-|\s*$)/;
+    // Find the start and end of the product table
+    let startIndex = -1;
+    let endIndex = -1;
 
-    for (const line of lines) {
-      const match = line.match(itemRegex);
-      if (match) {
-        const [, quantity, sku, description] = match;
-        items.push({
-          quantity_asked: parseInt(quantity, 10),
-          quantity_scanned: 0,
-          sku,
-          barcode: parseInt(sku, 10) || null,
-          description: description.trim(),
-          image: '',
-          reporte: '',
-        });
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // Look for "Cantidad Producto" header or similar
+      if (line.toLowerCase().includes('cantidad') && line.toLowerCase().includes('producto')) {
+        startIndex = i + 1;
+      }
+      
+      // Look for end markers
+      if (line.toLowerCase().includes('cantidad de unidades') || 
+          line.toLowerCase().includes('firma') ||
+          line.toLowerCase().includes('aclaracion')) {
+        endIndex = i;
+        break;
+      }
+    }
+
+    // If we found the product section, parse it
+    if (startIndex > -1) {
+      const productLines = endIndex > -1 ? 
+        lines.slice(startIndex, endIndex) : 
+        lines.slice(startIndex);
+
+      for (const line of productLines) {
+        const cleanLine = line.trim();
+        if (!cleanLine || cleanLine.length < 10) continue;
+
+        // Enhanced regex to capture product lines with various formats
+        // Matches: | quantity | code | description |
+        const itemRegex = /^\|?\s*(\d+)\s*\|\s*([0-9]{8,})\s*\|\s*(.*?)\s*(?:\|\s*L[.\s]|$)/;
+        
+        // Alternative regex for lines without pipes
+        const altRegex = /^\s*(\d+)\s+([0-9]{8,})\s+(.*?)(?:\s+L[.\s]|\s*$)/;
+
+        let match = cleanLine.match(itemRegex) || cleanLine.match(altRegex);
+        
+        if (match) {
+          const [, quantity, sku, description] = match;
+          
+          // Clean up the description by removing trailing codes and extra characters
+          let cleanDescription = description
+            .replace(/\s+L[.\s]\s*\w+.*$/, '') // Remove trailing L. codes
+            .replace(/\s*\|\s*$/, '') // Remove trailing pipes
+            .replace(/\s*a»\s*$/, '') // Remove trailing symbols
+            .replace(/\s*d\s*$/, '') // Remove trailing letters
+            .trim();
+
+          if (cleanDescription && sku.length >= 8) {
+            items.push({
+              quantity_asked: parseInt(quantity, 10),
+              quantity_scanned: 0,
+              sku: sku,
+              barcode: parseInt(sku, 10) || null,
+              description: cleanDescription,
+              image: '',
+              reporte: '',
+            });
+          }
+        }
       }
     }
 
