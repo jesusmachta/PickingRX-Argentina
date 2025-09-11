@@ -116,6 +116,14 @@ export class PickingRxComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Navega a la vista de scanner para una nota de entrega
+   */
+  onScannerModeClick(note: ProcessedDeliveryNote, event: Event): void {
+    event.stopPropagation(); // Prevent triggering the card click
+    this.router.navigate(['/picking-rx/scanner', note.id]);
+  }
+
+  /**
    * Obtiene las notas de entrega por estado
    */
   getDeliveryNotesByStatus(
