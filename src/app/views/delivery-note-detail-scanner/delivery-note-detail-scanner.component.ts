@@ -3,8 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
-import { ZXingScannerModule } from '@zxing/ngx-scanner';
-import { BarcodeFormat } from '@zxing/library';
+import { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } from '@zxing/library';
 import { DeliveryNoteDetailService } from '../../controllers/delivery-note-detail.service';
 import {
   ProcessedDeliveryNote,
@@ -19,7 +18,7 @@ import {
 @Component({
   selector: 'app-delivery-note-detail-scanner',
   standalone: true,
-  imports: [CommonModule, FormsModule, ZXingScannerModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './delivery-note-detail-scanner.component.html',
   styleUrls: ['./delivery-note-detail-scanner.component.css'],
 })
@@ -35,19 +34,10 @@ export class DeliveryNoteDetailScannerComponent implements OnInit, OnDestroy, Af
   hasDevices = false;
   hasPermission = false;
   qrResultString = '';
-
-  // Barcode formats to scan
-  allowedFormats = [
-    BarcodeFormat.QR_CODE,
-    BarcodeFormat.EAN_13,
-    BarcodeFormat.EAN_8,
-    BarcodeFormat.CODE_128,
-    BarcodeFormat.CODE_39,
-    BarcodeFormat.UPC_A,
-    BarcodeFormat.UPC_E,
-    BarcodeFormat.CODABAR,
-    BarcodeFormat.DATA_MATRIX,
-  ];
+  
+  // ZXing scanner instance
+  private codeReader: BrowserMultiFormatReader | null = null;
+  private videoElement: HTMLVideoElement | null = null;
 
   // Product sorting
   sortedItems: DeliveryItem[] = [];
@@ -70,8 +60,9 @@ export class DeliveryNoteDetailScannerComponent implements OnInit, OnDestroy, Af
   private destroy$ = new Subject<void>();
   private noteId = '';
 
-  // ViewChild for resizer
+  // ViewChild for resizer and video
   @ViewChild('resizer', { static: false }) resizerRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('videoElement', { static: false }) videoRef!: ElementRef<HTMLVideoElement>;
 
   // Enum references for template
   DeliveryNoteStatus = DeliveryNoteStatus;
@@ -95,6 +86,8 @@ export class DeliveryNoteDetailScannerComponent implements OnInit, OnDestroy, Af
   ngAfterViewInit(): void {
     // Initialize resizer functionality
     this.initializeResizer();
+    // Initialize camera scanner
+    this.initializeScanner();
   }
 
   ngOnDestroy(): void {
@@ -104,6 +97,9 @@ export class DeliveryNoteDetailScannerComponent implements OnInit, OnDestroy, Af
         clearTimeout(timer);
       }
     });
+
+    // Stop scanner
+    this.stopScanner();
 
     this.destroy$.next();
     this.destroy$.complete();
@@ -137,43 +133,85 @@ export class DeliveryNoteDetailScannerComponent implements OnInit, OnDestroy, Af
   }
 
   /**
-   * Handle camera devices found
+   * Initialize the camera scanner
    */
-  onCamerasFound(devices: MediaDeviceInfo[]): void {
-    this.availableDevices = devices;
-    this.hasDevices = Boolean(devices && devices.length);
-    
-    // Select the first back camera if available, otherwise first camera
-    const backCamera = devices.find(device => 
-      device.label.toLowerCase().includes('back') || 
-      device.label.toLowerCase().includes('rear')
-    );
-    this.currentDevice = backCamera || devices[0] || null;
-  }
-
-  /**
-   * Handle camera not found
-   */
-  onCamerasNotFound(): void {
-    this.hasDevices = false;
-  }
-
-  /**
-   * Handle permission response
-   */
-  onHasPermission(has: boolean | Event): void {
-    if (typeof has === 'boolean') {
-      this.hasPermission = has;
-    } else {
-      // Handle event case - extract boolean from event if needed
-      this.hasPermission = true;
+  private async initializeScanner(): Promise<void> {
+    try {
+      // Initialize the code reader
+      this.codeReader = new BrowserMultiFormatReader();
+      
+      // Get available video devices
+      const videoInputDevices = await this.codeReader.listVideoInputDevices();
+      this.availableDevices = videoInputDevices;
+      this.hasDevices = videoInputDevices.length > 0;
+      
+      if (this.hasDevices) {
+        // Select the first back camera if available, otherwise first camera
+        const backCamera = videoInputDevices.find(device => 
+          device.label.toLowerCase().includes('back') || 
+          device.label.toLowerCase().includes('rear')
+        );
+        this.currentDevice = backCamera || videoInputDevices[0];
+        
+        // Start scanning
+        this.startScanning();
+      }
+    } catch (error) {
+      console.error('Error initializing scanner:', error);
+      this.hasDevices = false;
+      this.hasPermission = false;
     }
+  }
+
+  /**
+   * Start scanning with the selected device
+   */
+  private async startScanning(): Promise<void> {
+    if (!this.codeReader || !this.currentDevice || !this.videoRef?.nativeElement) {
+      return;
+    }
+
+    try {
+      this.videoElement = this.videoRef.nativeElement;
+      this.hasPermission = true;
+
+      // Start decoding from video device
+      await this.codeReader.decodeFromVideoDevice(
+        this.currentDevice.deviceId,
+        this.videoElement,
+        (result, error) => {
+          if (result) {
+            this.onCodeResult(result.getText());
+          }
+          if (error) {
+            // Only log non-NotFoundException errors
+            if (error.name !== 'NotFoundException') {
+              console.warn('Scan error:', error);
+            }
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error starting scanner:', error);
+      this.hasPermission = false;
+    }
+  }
+
+  /**
+   * Stop the scanner
+   */
+  private stopScanner(): void {
+    if (this.codeReader) {
+      this.codeReader.reset();
+      this.codeReader = null;
+    }
+    this.videoElement = null;
   }
 
   /**
    * Handle successful barcode scan
    */
-  onCodeResult(resultString: string): void {
+  private onCodeResult(resultString: string): void {
     if (!this.config || this.isScanning || !resultString.trim()) {
       return;
     }

@@ -115,19 +115,15 @@
           </div>
         </div>
 
-        <!-- ZXing Scanner -->
-        <zxing-scanner
-          *ngIf="hasPermission && hasDevices && currentDevice"
-          [device]="currentDevice"
-          [formats]="allowedFormats"
-          [tryHarder]="true"
-          [enable]="true"
-          (camerasFound)="onCamerasFound($event)"
-          (camerasNotFound)="onCamerasNotFound()"
-          (hasPermission)="onHasPermission($event)"
-          (scanSuccess)="onCodeResult($event)"
+        <!-- Video Scanner -->
+        <video
+          #videoElement
+          *ngIf="hasPermission && hasDevices"
           class="scanner-viewport"
-        ></zxing-scanner>
+          autoplay
+          muted
+          playsinline
+        ></video>
 
         <!-- Scanner Overlay -->
         <div class="scanner-overlay" *ngIf="hasPermission && hasDevices">
