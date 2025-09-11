@@ -124,7 +124,7 @@
           [enable]="true"
           (camerasFound)="onCamerasFound($event)"
           (camerasNotFound)="onCamerasNotFound()"
-          (permissionResponse)="onHasPermission($event)"
+          (hasPermission)="onHasPermission($event)"
           (scanSuccess)="onCodeResult($event)"
           class="scanner-viewport"
         ></zxing-scanner>

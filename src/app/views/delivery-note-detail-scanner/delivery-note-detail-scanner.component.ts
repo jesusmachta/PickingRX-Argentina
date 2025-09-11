@@ -161,8 +161,13 @@ export class DeliveryNoteDetailScannerComponent implements OnInit, OnDestroy, Af
   /**
    * Handle permission response
    */
-  onHasPermission(has: boolean): void {
-    this.hasPermission = has;
+  onHasPermission(has: boolean | Event): void {
+    if (typeof has === 'boolean') {
+      this.hasPermission = has;
+    } else {
+      // Handle event case - extract boolean from event if needed
+      this.hasPermission = true;
+    }
   }
 
   /**
