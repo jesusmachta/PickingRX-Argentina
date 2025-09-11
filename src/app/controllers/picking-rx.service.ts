@@ -279,7 +279,9 @@ export class PickingRxService {
       totalItems: totalItems,
       scannedItems: scannedItems,
       progressPercentage: progressPercentage,
-      createdAt: new Date(),
+      createdAt: firebaseNote.createdAt?.toDate
+        ? firebaseNote.createdAt.toDate()
+        : firebaseNote.createdAt || new Date(),
       estimatedDeliveryTime: firebaseNote.estimatedDeliveryTime?.toDate?.(),
     };
   }

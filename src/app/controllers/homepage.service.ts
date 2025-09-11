@@ -23,7 +23,7 @@ export class HomepageService {
       functionalities: [
         {
           id: 'picking-rx',
-          title: 'Picking RX',
+          title: 'Picking',
           description:
             'Gestión de pedidos de domicilios pendientes y preparados',
           icon: 'truck',

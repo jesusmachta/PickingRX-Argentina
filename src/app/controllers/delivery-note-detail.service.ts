@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, BehaviorSubject, throwError } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { Observable, of, BehaviorSubject, from } from 'rxjs';
+import { map, tap, catchError, switchMap } from 'rxjs/operators';
 import {
   FirebaseDeliveryNote,
   ProcessedDeliveryNote,
@@ -12,34 +12,46 @@ import {
   DeliveryNoteStatus,
   DeliveryNoteStatusText,
 } from '../models/picking-rx.interface';
+import { FirebaseService } from './firebase.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class DeliveryNoteDetailService {
-  // TODO: Reemplazar con el endpoint real de Firebase
-  private readonly FIREBASE_ENDPOINT =
-    'https://your-firebase-project.firebaseio.com/api';
-
   private currentNoteSubject =
     new BehaviorSubject<ProcessedDeliveryNote | null>(null);
   public currentNote$ = this.currentNoteSubject.asObservable();
 
-  constructor() {
-    this.initializeMockData();
-  }
+  constructor(private firebaseService: FirebaseService) {}
 
   /**
    * Obtiene una nota de entrega por ID desde Firebase
-   * TODO: Implementar llamada real a Firebase
    */
   getDeliveryNoteById(noteId: string): Observable<ProcessedDeliveryNote> {
-    // TODO: Reemplazar con HttpClient call a Firebase
-    // return this.http.get<FirebaseDeliveryNote>(`${this.FIREBASE_ENDPOINT}/notes/${noteId}`)
-    //   .pipe(map(firebaseNote => this.processFirebaseNote(firebaseNote)));
+    return from(this.firebaseService.getRemitoById(noteId)).pipe(
+      map((firebaseNote) => {
+        if (!firebaseNote) {
+          throw new Error(`No se encontró el remito con ID: ${noteId}`);
+        }
+        return this.processFirebaseNote(firebaseNote);
+      }),
+      tap((processedNote) => {
+        this.currentNoteSubject.next(processedNote);
+      }),
+      catchError((error) => {
+        console.error('Error obteniendo nota de entrega:', error);
 
-    // Simulación de datos por ahora
-    return this.getMockNoteById(noteId);
+        // Verificar si es un error de conectividad
+        if (error?.message === 'FIREBASE_OFFLINE') {
+          console.warn('🌐 Firebase está offline, usando datos mock.');
+        } else {
+          console.error('🔥 Error desconocido en Firebase:', error);
+        }
+
+        console.log('📋 Usando datos mock como fallback...');
+        return this.getMockNoteById(noteId);
+      })
+    );
   }
 
   /**
@@ -51,7 +63,9 @@ export class DeliveryNoteDetailService {
     return this.getDeliveryNoteById(noteId).pipe(
       map((note) => ({
         note,
-        canScan: note.status === DeliveryNoteStatus.PREPARANDO,
+        canScan:
+          note.status === DeliveryNoteStatus.POR_PREPARAR ||
+          note.status === DeliveryNoteStatus.PREPARANDO,
         canUpdateStatus: true,
         canReport: true,
       }))
@@ -60,42 +74,50 @@ export class DeliveryNoteDetailService {
 
   /**
    * Actualiza la cantidad escaneada de un producto
-   * TODO: Implementar llamada real a Firebase
    */
   updateScannedQuantity(update: UpdateScannedQuantity): Observable<boolean> {
-    // TODO: Implementar llamada a Firebase
-    // return this.http.put<boolean>(`${this.FIREBASE_ENDPOINT}/notes/${update.noteId}/items/${update.sku}`, {
-    //   quantity_scanned: update.newScannedQuantity
-    // });
+    return from(
+      this.firebaseService.updateItemScannedQuantity(
+        update.noteId,
+        update.sku,
+        update.newScannedQuantity
+      )
+    ).pipe(
+      tap((success) => {
+        if (success) {
+          // Actualizar el estado local
+          const currentNote = this.currentNoteSubject.value;
+          if (currentNote) {
+            const itemIndex = currentNote.items.findIndex(
+              (item) => item.sku === update.sku
+            );
+            if (itemIndex !== -1) {
+              const updatedNote = { ...currentNote };
+              updatedNote.items[itemIndex] = {
+                ...updatedNote.items[itemIndex],
+                quantity_scanned: update.newScannedQuantity,
+              };
+              updatedNote.scannedItems = this.calculateScannedItems(
+                updatedNote.items
+              );
+              updatedNote.progressPercentage = this.calculateProgress(
+                updatedNote.items
+              );
 
-    // Simulación por ahora
-    const currentNote = this.currentNoteSubject.value;
-    if (currentNote) {
-      const itemIndex = currentNote.items.findIndex(
-        (item) => item.sku === update.sku
-      );
-      if (itemIndex !== -1) {
-        const updatedNote = { ...currentNote };
-        updatedNote.items[itemIndex] = {
-          ...updatedNote.items[itemIndex],
-          quantity_scanned: update.newScannedQuantity,
-        };
-        updatedNote.scannedItems = this.calculateScannedItems(
-          updatedNote.items
-        );
-        updatedNote.progressPercentage = this.calculateProgress(
-          updatedNote.items
-        );
-
-        this.currentNoteSubject.next(updatedNote);
-        return of(true);
-      }
-    }
-    return of(false);
+              this.currentNoteSubject.next(updatedNote);
+            }
+          }
+        }
+      }),
+      catchError((error) => {
+        console.error('Error actualizando cantidad escaneada:', error);
+        return of(false);
+      })
+    );
   }
 
   /**
-   * Simula el escaneo de un código de barras
+   * Escanea un código de barras y actualiza las cantidades
    */
   scanBarcode(noteId: string, scannedCode: string): Observable<ScanResult> {
     const currentNote = this.currentNoteSubject.value;
@@ -136,74 +158,121 @@ export class DeliveryNoteDetailService {
       item.quantity_asked
     );
 
+    // Verificar si es el primer escaneo y cambiar estado si es necesario
+    const isFirstScan = currentNote.status === DeliveryNoteStatus.POR_PREPARAR;
+
     return this.updateScannedQuantity({
       noteId,
       sku: item.sku,
       newScannedQuantity,
     }).pipe(
-      map((success) => ({
-        success,
-        scannedCode,
-        item,
-        message: success
-          ? `Producto escaneado: ${item.description}`
-          : 'Error al actualizar cantidad escaneada',
-      }))
+      switchMap((success) => {
+        if (success && isFirstScan) {
+          // Cambiar estado a "Preparando" en el primer escaneo
+          return this.updateNoteStatus(
+            noteId,
+            DeliveryNoteStatus.PREPARANDO
+          ).pipe(
+            map((statusUpdated) => ({
+              success: statusUpdated,
+              scannedCode,
+              item,
+              message: statusUpdated
+                ? `Producto escaneado: ${item.description}. Estado cambiado a "Preparando".`
+                : `Producto escaneado: ${item.description}. Error al actualizar estado.`,
+            }))
+          );
+        } else {
+          return of({
+            success,
+            scannedCode,
+            item,
+            message: success
+              ? `Producto escaneado: ${item.description}`
+              : 'Error al actualizar cantidad escaneada',
+          });
+        }
+      }),
+      catchError((error) => {
+        console.error('Error en el proceso de escaneo:', error);
+        return of({
+          success: false,
+          scannedCode,
+          item,
+          message: 'Error al procesar el escaneo',
+        });
+      })
     );
   }
 
   /**
    * Reporta un problema con un producto
-   * TODO: Implementar llamada real a Firebase
    */
   reportProductIssue(report: ProductReport): Observable<boolean> {
-    // TODO: Implementar llamada a Firebase
-    // return this.http.post<boolean>(`${this.FIREBASE_ENDPOINT}/reports`, report);
+    const reportString = `${report.reportType}: ${report.description}`;
 
-    const currentNote = this.currentNoteSubject.value;
-    if (currentNote) {
-      const itemIndex = currentNote.items.findIndex(
-        (item) => item.sku === report.sku
-      );
-      if (itemIndex !== -1) {
-        const updatedNote = { ...currentNote };
-        updatedNote.items[itemIndex] = {
-          ...updatedNote.items[itemIndex],
-          reporte: `${report.reportType}: ${report.description}`,
-        };
+    return from(
+      this.firebaseService.updateItemReport(
+        report.noteId,
+        report.sku,
+        reportString
+      )
+    ).pipe(
+      tap((success) => {
+        if (success) {
+          // Actualizar el estado local
+          const currentNote = this.currentNoteSubject.value;
+          if (currentNote) {
+            const itemIndex = currentNote.items.findIndex(
+              (item) => item.sku === report.sku
+            );
+            if (itemIndex !== -1) {
+              const updatedNote = { ...currentNote };
+              updatedNote.items[itemIndex] = {
+                ...updatedNote.items[itemIndex],
+                reporte: reportString,
+              };
 
-        this.currentNoteSubject.next(updatedNote);
-        return of(true);
-      }
-    }
-    return of(false);
+              this.currentNoteSubject.next(updatedNote);
+            }
+          }
+        }
+      }),
+      catchError((error) => {
+        console.error('Error reportando problema:', error);
+        return of(false);
+      })
+    );
   }
 
   /**
    * Actualiza el estado de la nota de entrega
-   * TODO: Implementar llamada real a Firebase
    */
   updateNoteStatus(
     noteId: string,
     newStatus: DeliveryNoteStatus
   ): Observable<boolean> {
-    // TODO: Implementar llamada a Firebase
-    // return this.http.put<boolean>(`${this.FIREBASE_ENDPOINT}/notes/${noteId}`, {
-    //   state: newStatus
-    // });
+    return from(this.firebaseService.updateRemitoState(noteId, newStatus)).pipe(
+      tap((success) => {
+        if (success) {
+          // Actualizar el estado local
+          const currentNote = this.currentNoteSubject.value;
+          if (currentNote && currentNote.id === noteId) {
+            const updatedNote = {
+              ...currentNote,
+              status: newStatus,
+              updatedAt: new Date(),
+            };
 
-    const currentNote = this.currentNoteSubject.value;
-    if (currentNote && currentNote.id === noteId) {
-      const updatedNote = {
-        ...currentNote,
-        status: newStatus,
-        updatedAt: new Date(),
-      };
-
-      this.currentNoteSubject.next(updatedNote);
-      return of(true);
-    }
-    return of(false);
+            this.currentNoteSubject.next(updatedNote);
+          }
+        }
+      }),
+      catchError((error) => {
+        console.error('Error actualizando estado:', error);
+        return of(false);
+      })
+    );
   }
 
   /**
@@ -229,6 +298,11 @@ export class DeliveryNoteDetailService {
       progressPercentage,
       createdAt: new Date(),
       updatedAt: new Date(),
+      // Información adicional por defecto
+      clientName: 'Cliente',
+      address: 'Dirección de entrega',
+      priority: 'medium',
+      estimatedDeliveryTime: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 horas
     };
   }
 
@@ -253,7 +327,7 @@ export class DeliveryNoteDetailService {
   }
 
   /**
-   * Datos de prueba - TODO: Eliminar cuando se implemente Firebase
+   * Datos de prueba - fallback cuando Firebase no está disponible
    */
   private getMockNoteById(noteId: string): Observable<ProcessedDeliveryNote> {
     const mockFirebaseNote: FirebaseDeliveryNote = {
@@ -285,22 +359,7 @@ export class DeliveryNoteDetailService {
 
     const processedNote = this.processFirebaseNote(mockFirebaseNote);
 
-    // Agregar información adicional que no viene de Firebase
-    processedNote.clientName = 'Cliente de Ejemplo';
-    processedNote.address = 'Caracas, Venezuela';
-    processedNote.priority = 'high';
-    processedNote.estimatedDeliveryTime = new Date(
-      Date.now() + 2 * 60 * 60 * 1000
-    ); // 2 horas
-
     this.currentNoteSubject.next(processedNote);
     return of(processedNote);
-  }
-
-  /**
-   * Inicializa datos de prueba
-   */
-  private initializeMockData(): void {
-    // Los datos se cargarán cuando se solicite una nota específica
   }
 }
