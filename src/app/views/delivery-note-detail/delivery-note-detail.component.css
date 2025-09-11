@@ -324,15 +324,8 @@
   background: var(--color-white);
   box-shadow: var(--shadow-light);
 
-  /* Prevenir teclado virtual en móviles */
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
-  user-select: text;
-
   /* Mejorar la experiencia de hand-held scanners */
   cursor: text;
-  caret-color: transparent; /* Ocultar cursor parpadeante */
 }
 
 .scanner-input:focus {
