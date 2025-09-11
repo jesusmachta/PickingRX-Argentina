@@ -1,4 +1,11 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  AfterViewInit,
+  ViewChild,
+  ElementRef,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -21,7 +28,12 @@ import {
   templateUrl: './delivery-note-detail.component.html',
   styleUrl: './delivery-note-detail.component.css',
 })
-export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
+export class DeliveryNoteDetailComponent
+  implements OnInit, OnDestroy, AfterViewInit
+{
+  @ViewChild('scannerInput', { static: false })
+  scannerInput!: ElementRef<HTMLInputElement>;
+
   config: DeliveryNoteDetailConfig | null = null;
   isLoading = true;
   scanInputValue = '';
@@ -40,9 +52,11 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
   private scannerBuffer = '';
   private scannerTimeout: any;
   private inputTimeout: any;
+  private autoFocusInterval: any;
   private readonly SCANNER_TIMEOUT = 100; // ms between characters
   private readonly AUTO_SCAN_DELAY = 20; // ms delay before auto-processing
   private readonly INPUT_DELAY = 150; // ms delay for input completion
+  private readonly AUTO_FOCUS_INTERVAL = 5000; // 5 segundos para autofocus
 
   // Modal states
   showReportModal = false;
@@ -72,6 +86,11 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  ngAfterViewInit(): void {
+    // Iniciar autofocus después de que la vista esté inicializada
+    this.startAutoFocus();
+  }
+
   ngOnDestroy(): void {
     // Limpiar todos los timers de controles de cantidad
     Object.values(this.quantityControlTimers).forEach((timer) => {
@@ -86,6 +105,9 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
     }
     if (this.inputTimeout) {
       clearTimeout(this.inputTimeout);
+    }
+    if (this.autoFocusInterval) {
+      clearInterval(this.autoFocusInterval);
     }
 
     this.destroy$.next();
@@ -146,6 +168,9 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
 
             // Recargar la configuración para obtener datos actualizados
             this.loadDeliveryNoteDetail();
+
+            // Re-aplicar focus para siguiente escaneo
+            setTimeout(() => this.focusInput(), 100);
           }
 
           // Limpiar el resultado después de 3 segundos
@@ -158,6 +183,47 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
           this.isScanning = false;
         },
       });
+  }
+
+  /**
+   * Inicia el autofocus automático cada 5 segundos
+   */
+  private startAutoFocus(): void {
+    // Focus inicial inmediato
+    this.focusInput();
+
+    // Configurar autofocus cada 5 segundos
+    this.autoFocusInterval = setInterval(() => {
+      this.focusInput();
+    }, this.AUTO_FOCUS_INTERVAL);
+  }
+
+  /**
+   * Hace focus al input del scanner de forma segura
+   */
+  private focusInput(): void {
+    if (this.scannerInput?.nativeElement && !this.isScanning) {
+      try {
+        this.scannerInput.nativeElement.focus();
+        console.log('🎯 Autofocus aplicado al scanner input');
+      } catch (error) {
+        console.log('⚠️ Error al hacer focus:', error);
+      }
+    }
+  }
+
+  /**
+   * Previene la aparición del teclado en dispositivos móviles
+   */
+  onInputFocus(event: FocusEvent): void {
+    const input = event.target as HTMLInputElement;
+    if (input) {
+      // Prevenir teclado virtual
+      input.setAttribute('readonly', 'readonly');
+      setTimeout(() => {
+        input.removeAttribute('readonly');
+      }, 100);
+    }
   }
 
   /**

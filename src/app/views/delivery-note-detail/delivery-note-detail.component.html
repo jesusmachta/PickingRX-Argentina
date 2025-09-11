@@ -122,6 +122,7 @@
 
       <div class="scanner-input-container">
         <input
+          #scannerInput
           type="text"
           class="scanner-input"
           [class.scanning]="isScanning"
@@ -132,10 +133,14 @@
           (paste)="onScanInputPaste($event)"
           (change)="onScanInputChange($event)"
           (propertychange)="onScanInputChange($event)"
+          (focus)="onInputFocus($event)"
           [disabled]="isScanning"
-          #scanInput
+          [autofocus]="true"
           autocomplete="off"
           spellcheck="false"
+          readonly
+          onfocus="this.removeAttribute('readonly');"
+          inputmode="none"
         />
         <button
           class="scan-button"

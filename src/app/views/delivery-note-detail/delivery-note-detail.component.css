@@ -323,12 +323,27 @@
   transition: all var(--transition-fast);
   background: var(--color-white);
   box-shadow: var(--shadow-light);
+
+  /* Prevenir teclado virtual en móviles */
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+
+  /* Mejorar la experiencia de hand-held scanners */
+  cursor: text;
+  caret-color: transparent; /* Ocultar cursor parpadeante */
 }
 
 .scanner-input:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+
+  /* Asegurar que no aparezca teclado */
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  user-select: text;
 }
 
 .scanner-input:disabled {
@@ -354,6 +369,27 @@
   100% {
     box-shadow: 0 0 0 0 rgba(52, 152, 219, 0);
   }
+}
+
+/* Estilo para cuando el input está enfocado (autofocus activo) */
+.scanner-input:focus:not(.scanning) {
+  border-color: #27ae60;
+  box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.2);
+}
+
+/* Animación sutil para indicar que está listo para escanear */
+@keyframes readyToScan {
+  0%,
+  100% {
+    border-color: var(--color-light-gray);
+  }
+  50% {
+    border-color: #27ae60;
+  }
+}
+
+.scanner-input:focus:not(.scanning):not(:hover) {
+  animation: readyToScan 3s infinite;
 }
 
 .scan-button {
