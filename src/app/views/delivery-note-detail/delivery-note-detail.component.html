@@ -121,81 +121,29 @@
       </div>
 
       <div class="scanner-input-container">
-        <div class="input-wrapper">
-          <input
-            #scannerInput
-            type="text"
-            class="scanner-input"
-            [class.scanning]="isScanning"
-            placeholder="Esperando escaneo..."
-            [(ngModel)]="scanInputValue"
-            (input)="onBarcodeInput($event)"
-            (keyup)="onScanInputKeyup($event)"
-            [disabled]="isScanning"
-            [autofocus]="true"
-            autocomplete="off"
-            spellcheck="false"
-            inputmode="none"
-            readonly
-          />
-
-          <!-- Botón para teclado numérico -->
-          <button
-            class="keyboard-button"
-            (click)="toggleNumericKeyboard()"
-            title="Mostrar teclado numérico"
-            type="button"
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <rect x="2" y="4" width="20" height="16" rx="2" />
-              <path
-                d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M6 16h.01M10 16h.01M14 16h.01M18 16h.01"
-              />
-            </svg>
-          </button>
-        </div>
-
+        <input
+          type="text"
+          class="scanner-input"
+          [class.scanning]="isScanning"
+          placeholder="Apunte el scanner y escanee..."
+          [(ngModel)]="scanInputValue"
+          (keyup)="onScanInputKeyup($event)"
+          (input)="onScanInputChange($event)"
+          (paste)="onScanInputPaste($event)"
+          (change)="onScanInputChange($event)"
+          (propertychange)="onScanInputChange($event)"
+          [disabled]="isScanning"
+          #scanInput
+          autocomplete="off"
+          spellcheck="false"
+        />
         <button
           class="scan-button"
-          (click)="processBarcodeScan(scanInputValue)"
+          (click)="onScanBarcode()"
           [disabled]="!scanInputValue.trim() || isScanning"
         >
           <span *ngIf="!isScanning">Procesar</span>
           <span *ngIf="isScanning">Procesando...</span>
-        </button>
-      </div>
-
-      <!-- Teclado Numérico -->
-      <div class="numeric-keyboard" *ngIf="showNumericKeyboard">
-        <div class="keyboard-header">
-          <span>Teclado Numérico</span>
-          <button class="keyboard-close" (click)="toggleNumericKeyboard()">
-            ✕
-          </button>
-        </div>
-        <div class="keyboard-grid">
-          <button class="key-btn" (click)="addNumber('1')">1</button>
-          <button class="key-btn" (click)="addNumber('2')">2</button>
-          <button class="key-btn" (click)="addNumber('3')">3</button>
-          <button class="key-btn" (click)="addNumber('4')">4</button>
-          <button class="key-btn" (click)="addNumber('5')">5</button>
-          <button class="key-btn" (click)="addNumber('6')">6</button>
-          <button class="key-btn" (click)="addNumber('7')">7</button>
-          <button class="key-btn" (click)="addNumber('8')">8</button>
-          <button class="key-btn" (click)="addNumber('9')">9</button>
-          <button class="key-btn action" (click)="clearInput()">C</button>
-          <button class="key-btn" (click)="addNumber('0')">0</button>
-          <button class="key-btn action" (click)="backspace()">⌫</button>
-        </div>
-        <button class="keyboard-enter" (click)="processFromKeyboard()">
-          Procesar
         </button>
       </div>
 
