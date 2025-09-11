@@ -122,18 +122,18 @@
 
       <div class="scanner-input-container">
         <input
-          *ngIf="!isMobile"
-          #scannerInput
           type="text"
           class="scanner-input"
           [class.scanning]="isScanning"
-          placeholder="Escanea código..."
+          placeholder="Apunte el scanner y escanee..."
           [(ngModel)]="scanInputValue"
-          (input)="onScanInputChange($event)"
           (keyup)="onScanInputKeyup($event)"
+          (input)="onScanInputChange($event)"
           (paste)="onScanInputPaste($event)"
+          (change)="onScanInputChange($event)"
+          (propertychange)="onScanInputChange($event)"
           [disabled]="isScanning"
-          [autofocus]="true"
+          #scanInput
           autocomplete="off"
           spellcheck="false"
         />

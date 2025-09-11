@@ -323,9 +323,6 @@
   transition: all var(--transition-fast);
   background: var(--color-white);
   box-shadow: var(--shadow-light);
-
-  /* Mejorar la experiencia de hand-held scanners */
-  cursor: text;
 }
 
 .scanner-input:focus {
@@ -356,23 +353,6 @@
   }
   100% {
     box-shadow: 0 0 0 0 rgba(52, 152, 219, 0);
-  }
-}
-
-/* Combinando estilos de autofocus para reducir CSS */
-.scanner-input:focus:not(.scanning) {
-  border-color: #27ae60;
-  box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.2);
-  animation: readyToScan 3s infinite;
-}
-
-@keyframes readyToScan {
-  0%,
-  100% {
-    border-color: var(--color-light-gray);
-  }
-  50% {
-    border-color: #27ae60;
   }
 }
 
