@@ -130,6 +130,8 @@
           (keyup)="onScanInputKeyup($event)"
           (input)="onScanInputChange($event)"
           (paste)="onScanInputPaste($event)"
+          (change)="onScanInputChange($event)"
+          (propertychange)="onScanInputChange($event)"
           [disabled]="isScanning"
           #scanInput
           autocomplete="off"
@@ -202,7 +204,7 @@
 
       <div class="items-list">
         <div
-          *ngFor="let item of config.note.items"
+          *ngFor="let item of sortedItems"
           class="item-card"
           [class]="getItemStatusClass(item)"
         >

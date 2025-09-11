@@ -28,6 +28,10 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
   isScanning = false;
   lastScanResult: ScanResult | null = null;
 
+  // Product sorting
+  sortedItems: DeliveryItem[] = [];
+  lastScannedSku: string | null = null;
+
   // Quantity control states
   showQuantityControls: { [sku: string]: boolean } = {};
   quantityControlTimers: { [sku: string]: any } = {};
@@ -35,8 +39,10 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
   // Hand-held scanner optimization
   private scannerBuffer = '';
   private scannerTimeout: any;
+  private inputTimeout: any;
   private readonly SCANNER_TIMEOUT = 100; // ms between characters
-  private readonly AUTO_SCAN_DELAY = 50; // ms delay before auto-processing
+  private readonly AUTO_SCAN_DELAY = 20; // ms delay before auto-processing
+  private readonly INPUT_DELAY = 150; // ms delay for input completion
 
   // Modal states
   showReportModal = false;
@@ -74,9 +80,12 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Limpiar timeout del scanner
+    // Limpiar timeouts del scanner
     if (this.scannerTimeout) {
       clearTimeout(this.scannerTimeout);
+    }
+    if (this.inputTimeout) {
+      clearTimeout(this.inputTimeout);
     }
 
     this.destroy$.next();
@@ -94,6 +103,7 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
         next: (config) => {
           this.config = config;
           this.isLoading = false;
+          this.updateSortedItems(); // Ordenar productos inicialmente
         },
         error: (error) => {
           console.error('Error al cargar el detalle de la nota:', error);
@@ -128,6 +138,9 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
           this.isScanning = false;
 
           if (result.success && result.item) {
+            // Guardar el último SKU escaneado para ordenamiento
+            this.lastScannedSku = result.item.sku;
+
             // Mostrar controles de cantidad para este producto
             this.showQuantityControlsForItem(result.item.sku);
 
@@ -161,22 +174,24 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
    */
   onScanInputChange(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const value = input.value;
+    const value = input.value.trim();
 
-    // Si el valor cambió significativamente (scan completo), procesar automáticamente
-    if (value.length > 5 && !this.isScanning) {
-      // Clear timeout anterior
-      if (this.scannerTimeout) {
-        clearTimeout(this.scannerTimeout);
-      }
+    // Clear timeout anterior
+    if (this.scannerTimeout) {
+      clearTimeout(this.scannerTimeout);
+    }
 
-      // Esperar un poco por si vienen más caracteres
+    // Si hay valor y no estamos escaneando, procesar automáticamente
+    if (value.length >= 4 && !this.isScanning) {
+      console.log('🔍 Detectado código hand-held:', value);
+
+      // Muy poco delay para permitir que el scanner termine de escribir
       this.scannerTimeout = setTimeout(() => {
-        if (value.trim().length > 5) {
-          console.log('🔍 Auto-escaneando código desde hand-held:', value);
+        if (this.scanInputValue.trim().length >= 4 && !this.isScanning) {
+          console.log('⚡ Auto-procesando código:', this.scanInputValue.trim());
           this.onScanBarcode();
         }
-      }, this.AUTO_SCAN_DELAY);
+      }, 20); // Reducido a 20ms para ser más responsive
     }
   }
 
@@ -191,6 +206,53 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
         this.onScanBarcode();
       }
     }, 10);
+  }
+
+  /**
+   * Ordena los productos según el estado de escaneo
+   * Prioridad: 1. Recién escaneado, 2. Parcialmente escaneados, 3. No escaneados, 4. Completamente escaneados
+   */
+  private sortProducts(items: DeliveryItem[]): DeliveryItem[] {
+    return items.sort((a, b) => {
+      // 1. El producto recién escaneado va primero
+      if (this.lastScannedSku) {
+        if (a.sku === this.lastScannedSku) return -1;
+        if (b.sku === this.lastScannedSku) return 1;
+      }
+
+      // 2. Estados de escaneo
+      const getStatus = (item: DeliveryItem) => {
+        if (item.quantity_scanned === 0) return 'not_scanned';
+        if (item.quantity_scanned < item.quantity_asked) return 'partial';
+        return 'completed';
+      };
+
+      const statusA = getStatus(a);
+      const statusB = getStatus(b);
+
+      // Orden de prioridad: partial > not_scanned > completed
+      const priorityOrder = { partial: 0, not_scanned: 1, completed: 2 };
+
+      const priorityDiff = priorityOrder[statusA] - priorityOrder[statusB];
+      if (priorityDiff !== 0) return priorityDiff;
+
+      // 3. Si mismo estado, ordenar por SKU alfabéticamente
+      return a.sku.localeCompare(b.sku);
+    });
+  }
+
+  /**
+   * Actualiza la lista ordenada de productos
+   */
+  private updateSortedItems(): void {
+    if (this.config?.note?.items) {
+      this.sortedItems = this.sortProducts([...this.config.note.items]);
+      console.log('🔄 Productos reordenados:', {
+        lastScanned: this.lastScannedSku,
+        total: this.sortedItems.length,
+        firstItem: this.sortedItems[0]?.sku,
+      });
+    }
   }
 
   /**
@@ -449,6 +511,8 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
    */
   private updateItemQuantity(sku: string, newQuantity: number): void {
     if (!this.config) return;
+
+    this.lastScannedSku = sku; // Marcar como último modificado
 
     this.deliveryNoteDetailService
       .updateScannedQuantity({
