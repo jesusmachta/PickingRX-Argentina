@@ -132,10 +132,15 @@
           (paste)="onScanInputPaste($event)"
           (change)="onScanInputChange($event)"
           (propertychange)="onScanInputChange($event)"
+          (blur)="onScanInputBlur($event)"
           [disabled]="isScanning"
           #scanInput
           autocomplete="off"
           spellcheck="false"
+          inputmode="none"
+          readonly
+          onfocus="this.removeAttribute('readonly');"
+          onblur="this.setAttribute('readonly', '');"
         />
         <button
           class="scan-button"
