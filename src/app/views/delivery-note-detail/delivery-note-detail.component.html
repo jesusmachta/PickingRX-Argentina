@@ -123,37 +123,17 @@
       <div class="scanner-input-container">
         <div class="input-wrapper">
           <input
-            *ngIf="!isMobile"
             #scannerInput
             type="text"
             class="scanner-input"
             [class.scanning]="isScanning"
-            placeholder="Escanea código..."
+            placeholder="Esperando escaneo..."
             [(ngModel)]="scanInputValue"
             (input)="onScanInputChange($event)"
             (keyup)="onScanInputKeyup($event)"
             (paste)="onScanInputPaste($event)"
             [disabled]="isScanning"
             [autofocus]="true"
-            autocomplete="off"
-            spellcheck="false"
-            inputmode="none"
-            readonly
-          />
-
-          <!-- Input para móviles con teclado opcional -->
-          <input
-            *ngIf="isMobile"
-            #scannerInput
-            type="text"
-            class="scanner-input"
-            [class.scanning]="isScanning"
-            placeholder="Escanea código o presiona teclado..."
-            [(ngModel)]="scanInputValue"
-            (input)="onScanInputChange($event)"
-            (keyup)="onScanInputKeyup($event)"
-            (paste)="onScanInputPaste($event)"
-            [disabled]="isScanning"
             autocomplete="off"
             spellcheck="false"
             inputmode="none"
@@ -168,8 +148,8 @@
             type="button"
           >
             <svg
-              width="20"
-              height="20"
+              width="24"
+              height="24"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -177,7 +157,7 @@
             >
               <rect x="2" y="4" width="20" height="16" rx="2" />
               <path
-                d="M6 8h.01M10 8h.01M14 8h.01M6 12h.01M10 12h.01M14 12h.01M6 16h.01M10 16h.01M14 16h.01"
+                d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M6 16h.01M10 16h.01M14 16h.01M18 16h.01"
               />
             </svg>
           </button>
@@ -185,7 +165,7 @@
 
         <button
           class="scan-button"
-          (click)="onScanBarcode()"
+          (click)="processBarcodeScan(scanInputValue)"
           [disabled]="!scanInputValue.trim() || isScanning"
         >
           <span *ngIf="!isScanning">Procesar</span>
@@ -215,6 +195,12 @@
           <button class="key-btn" (click)="addNumber('0')">0</button>
           <button class="key-btn action" (click)="backspace()">⌫</button>
         </div>
+        <button
+          class="keyboard-enter"
+          (click)="processBarcodeScan(scanInputValue); toggleNumericKeyboard()"
+        >
+          Enter
+        </button>
       </div>
 
       <!-- Scan Result -->

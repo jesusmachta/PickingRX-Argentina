@@ -2,9 +2,9 @@ import {
   Component,
   OnInit,
   OnDestroy,
-  AfterViewInit,
   ViewChild,
   ElementRef,
+  AfterViewInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -31,8 +31,7 @@ import {
 export class DeliveryNoteDetailComponent
   implements OnInit, OnDestroy, AfterViewInit
 {
-  @ViewChild('scannerInput', { static: false })
-  scannerInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('scannerInput') scannerInput!: ElementRef<HTMLInputElement>;
   config: DeliveryNoteDetailConfig | null = null;
   isLoading = true;
   scanInputValue = '';
@@ -51,8 +50,8 @@ export class DeliveryNoteDetailComponent
   private scanBuffer = '';
   private scanTimeout: any;
   private autoFocusInterval: any;
-  private readonly SCAN_DELAY = 500; // ms delay for scanner to finish
-  private readonly AUTO_FOCUS_INTERVAL = 5000; // 5 segundos para autofocus
+  private readonly SCAN_DELAY = 500; // ms to wait for scanner to finish typing
+  private readonly AUTO_FOCUS_INTERVAL = 5000; // 5 seconds
   isMobile =
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
       navigator.userAgent
@@ -88,12 +87,10 @@ export class DeliveryNoteDetailComponent
   }
 
   ngAfterViewInit(): void {
-    // Auto-focus scanner after initializing
-    setTimeout(() => {
-      this.focusScanner();
-    }, 500);
+    // Initial focus
+    setTimeout(() => this.focusScanner(), 500);
 
-    // Start autofocus interval
+    // Start persistent autofocus
     this.startAutoFocus();
   }
 
@@ -105,7 +102,7 @@ export class DeliveryNoteDetailComponent
       }
     });
 
-    // Limpiar timeouts del scanner
+    // Limpiar timeouts y intervalos del scanner
     if (this.scanTimeout) {
       clearTimeout(this.scanTimeout);
     }
@@ -172,7 +169,7 @@ export class DeliveryNoteDetailComponent
             // Recargar la configuración para obtener datos actualizados
             this.loadDeliveryNoteDetail();
 
-            // Re-aplicar focus para siguiente escaneo
+            // Re-focus for the next scan
             setTimeout(() => this.focusScanner(), 100);
           }
 
@@ -193,34 +190,12 @@ export class DeliveryNoteDetailComponent
    */
   onScanInputKeyup(event: KeyboardEvent): void {
     if (event.key === 'Enter') {
-      this.onScanBarcode();
+      this.processBarcodeScan(this.scanInputValue);
     }
   }
 
   /**
-   * Inicia el autofocus automático cada 5 segundos
-   */
-  private startAutoFocus(): void {
-    // Configurar autofocus cada 5 segundos
-    this.autoFocusInterval = setInterval(() => {
-      this.focusScanner();
-    }, this.AUTO_FOCUS_INTERVAL);
-  }
-
-  /**
-   * Hace focus al input del scanner de forma segura
-   */
-  focusScanner(): void {
-    if (!this.isMobile && this.scannerInput) {
-      setTimeout(() => {
-        this.scannerInput.nativeElement.focus();
-        console.log('🎯 Autofocus aplicado al scanner input');
-      }, 100);
-    }
-  }
-
-  /**
-   * Maneja cambios en el input - Optimizado para hand-held scanners
+   * Maneja cambios en el input - Optimizado para hand-held scanners con debounce
    */
   onScanInputChange(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -231,21 +206,19 @@ export class DeliveryNoteDetailComponent
       clearTimeout(this.scanTimeout);
     }
 
-    // Add to scan buffer
+    // Set buffer
     this.scanBuffer = value;
 
-    // Set timeout to process scan after scanner finishes
+    // Set timeout to process after scanner finishes "typing"
     this.scanTimeout = setTimeout(() => {
-      this.processBarcodeScan(this.scanBuffer);
-      input.value = '';
-      this.scanInputValue = '';
-      this.scanBuffer = '';
-
-      // Refocus scanner after processing
-      setTimeout(() => {
-        this.focusScanner();
-      }, 100);
-    }, this.SCAN_DELAY); // Wait 500ms for scanner to finish
+      if (this.scanBuffer) {
+        this.processBarcodeScan(this.scanBuffer);
+        // Clear input and buffer after processing
+        input.value = '';
+        this.scanInputValue = '';
+        this.scanBuffer = '';
+      }
+    }, this.SCAN_DELAY);
   }
 
   /**
@@ -255,7 +228,6 @@ export class DeliveryNoteDetailComponent
     // Permitir que el paste suceda primero
     setTimeout(() => {
       if (this.scanInputValue.trim().length > 3) {
-        console.log('📋 Procesando código pegado:', this.scanInputValue);
         this.processBarcodeScan(this.scanInputValue.trim());
         this.scanInputValue = '';
       }
@@ -263,16 +235,42 @@ export class DeliveryNoteDetailComponent
   }
 
   /**
-   * Procesa el código escaneado del hand-held scanner
+   * Procesa el código de barras final, llamado por los manejadores de input.
    */
-  private processBarcodeScan(scannedCode: string): void {
+  processBarcodeScan(scannedCode: string): void {
     if (!scannedCode || this.isScanning) return;
 
-    console.log('🔍 Procesando código escaneado:', scannedCode);
-
-    // Usar el código directamente para el escaneo
+    console.log(`📠 Procesando código: ${scannedCode}`);
     this.scanInputValue = scannedCode;
     this.onScanBarcode();
+  }
+
+  /**
+   * Inicia el intervalo de autofocus
+   */
+  private startAutoFocus(): void {
+    this.autoFocusInterval = setInterval(
+      () => this.focusScanner(),
+      this.AUTO_FOCUS_INTERVAL
+    );
+  }
+
+  /**
+   * Enfoca el input del scanner de forma segura
+   */
+  focusScanner(): void {
+    if (!this.isMobile && this.scannerInput?.nativeElement) {
+      // Usamos try-catch porque el focus puede fallar si la ventana no está activa
+      try {
+        this.scannerInput.nativeElement.focus();
+        console.log('🎯 Autofocus aplicado al input del scanner.');
+      } catch (error) {
+        console.warn(
+          'Fallo al aplicar autofocus, la ventana puede estar inactiva.',
+          error
+        );
+      }
+    }
   }
 
   /**
@@ -623,36 +621,36 @@ export class DeliveryNoteDetailComponent
   }
 
   /**
-   * Muestra/oculta el teclado numérico
+   * Muestra/oculta el teclado numérico en pantalla
    */
   toggleNumericKeyboard(): void {
     this.showNumericKeyboard = !this.showNumericKeyboard;
-    if (this.showNumericKeyboard) {
-      // Hacer focus al input cuando se muestra el teclado
-      setTimeout(() => {
-        if (this.scannerInput) {
-          this.scannerInput.nativeElement.focus();
-        }
-      }, 100);
+    // Si se muestra el teclado, quitamos el autofocus para evitar comportamientos extraños
+    if (this.showNumericKeyboard && this.autoFocusInterval) {
+      clearInterval(this.autoFocusInterval);
+    }
+    // Si se oculta, lo reactivamos
+    if (!this.showNumericKeyboard) {
+      this.startAutoFocus();
     }
   }
 
   /**
-   * Agrega número al input desde el teclado numérico
+   * Agrega un número al input desde el teclado en pantalla
    */
   addNumber(num: string): void {
     this.scanInputValue += num;
   }
 
   /**
-   * Borra el último carácter
+   * Borra el último caracter del input
    */
   backspace(): void {
     this.scanInputValue = this.scanInputValue.slice(0, -1);
   }
 
   /**
-   * Limpia todo el input
+   * Limpia el input del scanner
    */
   clearInput(): void {
     this.scanInputValue = '';
