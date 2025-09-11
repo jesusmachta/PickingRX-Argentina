@@ -339,11 +339,6 @@
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-
-  /* Asegurar que no aparezca teclado */
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  user-select: text;
 }
 
 .scanner-input:disabled {
@@ -371,13 +366,13 @@
   }
 }
 
-/* Estilo para cuando el input está enfocado (autofocus activo) */
+/* Combinando estilos de autofocus para reducir CSS */
 .scanner-input:focus:not(.scanning) {
   border-color: #27ae60;
   box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.2);
+  animation: readyToScan 3s infinite;
 }
 
-/* Animación sutil para indicar que está listo para escanear */
 @keyframes readyToScan {
   0%,
   100% {
@@ -386,10 +381,6 @@
   50% {
     border-color: #27ae60;
   }
-}
-
-.scanner-input:focus:not(.scanning):not(:hover) {
-  animation: readyToScan 3s infinite;
 }
 
 .scan-button {
