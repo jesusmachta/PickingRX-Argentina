@@ -6,6 +6,19 @@ import { FirebaseService } from '../../controllers/firebase.service';
 import { OcrService } from '../../controllers/ocr.service';
 import { GeminiService } from '../../controllers/gemini.service';
 
+interface ProcessedPdf {
+  id: string;
+  file: File;
+  parsedItems: ScannedItem[] | null;
+  isProcessing: boolean;
+  progress: number;
+  status: string;
+  isUploading: boolean;
+  uploadSuccess: boolean;
+  isMinimized: boolean;
+  error?: string;
+}
+
 @Component({
   selector: 'app-document-scanner',
   standalone: true,
@@ -16,6 +29,8 @@ import { GeminiService } from '../../controllers/gemini.service';
 export class DocumentScannerComponent {
   selectedImage: string | ArrayBuffer | null = null;
   selectedFile: File | null = null;
+  selectedPdf: File | null = null;
+  processedPdfs: ProcessedPdf[] = [];
   ocrResult: string | null = null;
   parsedItems: ScannedItem[] | null = null;
   ocrInProgress = false;
@@ -23,6 +38,8 @@ export class DocumentScannerComponent {
   ocrStatus = '';
   uploadInProgress = false;
   uploadSuccess = false;
+  isPdfMode = false;
+  isMultiPdfMode = false;
 
   constructor(
     private firebaseService: FirebaseService,
@@ -36,6 +53,8 @@ export class DocumentScannerComponent {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       this.selectedFile = input.files[0];
+      this.isPdfMode = false;
+      this.selectedPdf = null;
       const reader = new FileReader();
       reader.onload = (e) => {
         this.selectedImage = e.target?.result || null;
@@ -45,6 +64,51 @@ export class DocumentScannerComponent {
         }
       };
       reader.readAsDataURL(this.selectedFile);
+    }
+  }
+
+  onPdfFileChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const files = Array.from(input.files);
+      const pdfFiles = files.filter(file => file.type === 'application/pdf');
+      
+      if (pdfFiles.length !== files.length) {
+        alert('Por favor, selecciona solo archivos PDF válidos.');
+        return;
+      }
+
+      if (pdfFiles.length === 1) {
+        // Single PDF mode
+        this.selectedPdf = pdfFiles[0];
+        this.isPdfMode = true;
+        this.isMultiPdfMode = false;
+        this.selectedImage = null;
+        this.selectedFile = null;
+        this.processedPdfs = [];
+        // Automatically process PDF after selection
+        setTimeout(() => this.processPdf(), 500);
+      } else if (pdfFiles.length > 1) {
+        // Multiple PDF mode
+        this.isMultiPdfMode = true;
+        this.isPdfMode = false;
+        this.selectedPdf = null;
+        this.selectedImage = null;
+        this.selectedFile = null;
+        this.processedPdfs = pdfFiles.map(file => ({
+          id: `pdf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          file,
+          parsedItems: null,
+          isProcessing: false,
+          progress: 0,
+          status: 'Pendiente',
+          isUploading: false,
+          uploadSuccess: false,
+          isMinimized: false
+        }));
+        // Start processing all PDFs
+        setTimeout(() => this.processMultiplePdfs(), 500);
+      }
     }
   }
 
@@ -106,6 +170,134 @@ export class DocumentScannerComponent {
     }
   }
 
+  async processPdf(): Promise<void> {
+    if (!this.selectedPdf || !isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    this.ocrInProgress = true;
+    this.ocrResult = null;
+    this.parsedItems = null;
+    this.uploadSuccess = false;
+    this.ocrProgress = 0;
+    this.ocrStatus = 'Procesando PDF...';
+
+    try {
+      // Convert PDF to base64
+      const base64Pdf = await this.convertPdfToBase64(this.selectedPdf);
+      
+      this.ocrStatus = 'Analizando con IA...';
+      this.ocrProgress = 50;
+      
+      // Use Gemini API to parse the PDF directly
+      this.geminiService.parsePdfDocument(base64Pdf).subscribe({
+        next: (parsedItems: ScannedItem[]) => {
+          this.parsedItems = parsedItems;
+          this.ocrStatus = 'Análisis completado';
+          this.ocrProgress = 100;
+          
+          // Complete the loading after a brief delay to show 100%
+          setTimeout(() => {
+            this.ocrInProgress = false;
+          }, 500);
+        },
+        error: (error: any) => {
+          console.error('Gemini PDF parsing error:', error);
+          this.ocrStatus = 'Error procesando PDF';
+          this.ocrProgress = 100;
+          
+          setTimeout(() => {
+            this.ocrInProgress = false;
+          }, 500);
+          
+          alert('Error al procesar el PDF. Por favor, intenta con otro archivo o usa una imagen.');
+        }
+      });
+    } catch (error) {
+      console.error('PDF Processing Error:', error);
+      this.ocrResult = `Error durante el procesamiento del PDF: ${error instanceof Error ? error.message : 'Error desconocido'}`;
+      this.ocrInProgress = false;
+    }
+  }
+
+  async processMultiplePdfs(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    // Process PDFs sequentially to avoid overwhelming the API
+    for (let i = 0; i < this.processedPdfs.length; i++) {
+      const pdfData = this.processedPdfs[i];
+      await this.processSinglePdf(pdfData);
+      
+      // Add a small delay between processing to be respectful to the API
+      if (i < this.processedPdfs.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+  }
+
+  async processSinglePdf(pdfData: ProcessedPdf): Promise<void> {
+    pdfData.isProcessing = true;
+    pdfData.progress = 0;
+    pdfData.status = 'Procesando PDF...';
+    pdfData.error = undefined;
+
+    try {
+      // Convert PDF to base64
+      const base64Pdf = await this.convertPdfToBase64(pdfData.file);
+      
+      pdfData.status = 'Analizando con IA...';
+      pdfData.progress = 50;
+      
+      // Use Gemini API to parse the PDF directly
+      this.geminiService.parsePdfDocument(base64Pdf).subscribe({
+        next: (parsedItems: ScannedItem[]) => {
+          pdfData.parsedItems = parsedItems;
+          pdfData.status = 'Análisis completado';
+          pdfData.progress = 100;
+          
+          // Complete the loading after a brief delay to show 100%
+          setTimeout(() => {
+            pdfData.isProcessing = false;
+          }, 500);
+        },
+        error: (error: any) => {
+          console.error('Gemini PDF parsing error:', error);
+          pdfData.status = 'Error procesando PDF';
+          pdfData.progress = 100;
+          pdfData.error = 'Error al procesar el PDF. Intenta nuevamente.';
+          
+          setTimeout(() => {
+            pdfData.isProcessing = false;
+          }, 500);
+        }
+      });
+    } catch (error) {
+      console.error('PDF Processing Error:', error);
+      pdfData.status = 'Error procesando PDF';
+      pdfData.error = `Error durante el procesamiento: ${error instanceof Error ? error.message : 'Error desconocido'}`;
+      pdfData.isProcessing = false;
+    }
+  }
+
+  private async convertPdfToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (reader.result) {
+          // Remove the data URL prefix to get just the base64 data
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        } else {
+          reject(new Error('Failed to read PDF file'));
+        }
+      };
+      reader.onerror = () => reject(new Error('Error reading PDF file'));
+      reader.readAsDataURL(file);
+    });
+  }
+
   async onConfirmAndSave(): Promise<void> {
     if (!this.parsedItems) {
       return;
@@ -113,8 +305,8 @@ export class DocumentScannerComponent {
 
     this.uploadInProgress = true;
     try {
-      // Save remito data to Firestore without image
-      const documentId = await this.firebaseService.saveScannedData('no_image', this.parsedItems);
+      // Save remito data to Firestore
+      const documentId = await this.firebaseService.saveScannedData(this.parsedItems);
       
       this.uploadSuccess = true;
       console.log('Remito guardado exitosamente con ID:', documentId);
@@ -132,9 +324,46 @@ export class DocumentScannerComponent {
     }
   }
 
+  async onSavePdf(pdfData: ProcessedPdf): Promise<void> {
+    if (!pdfData.parsedItems || pdfData.parsedItems.length === 0) {
+      return;
+    }
+
+    pdfData.isUploading = true;
+    try {
+      const documentId = await this.firebaseService.saveScannedData(pdfData.parsedItems);
+      
+      pdfData.uploadSuccess = true;
+      console.log('PDF guardado exitosamente con ID:', documentId);
+      
+      // Check if all PDFs are saved
+      this.checkAllPdfsSaved();
+      
+    } catch (error) {
+      console.error('Error saving PDF data:', error);
+      alert('Error al guardar el PDF. Por favor, intenta nuevamente.');
+    } finally {
+      pdfData.isUploading = false;
+    }
+  }
+
+  private checkAllPdfsSaved(): void {
+    if (this.isMultiPdfMode) {
+      const allSaved = this.processedPdfs.every(pdf => pdf.uploadSuccess);
+      if (allSaved) {
+        // All PDFs saved, redirect after a delay
+        setTimeout(() => {
+          this.router.navigate(['/']);
+        }, 1500);
+      }
+    }
+  }
+
   resetScanner(): void {
     this.selectedImage = null;
     this.selectedFile = null;
+    this.selectedPdf = null;
+    this.processedPdfs = [];
     this.ocrResult = null;
     this.parsedItems = null;
     this.ocrInProgress = false;
@@ -142,6 +371,8 @@ export class DocumentScannerComponent {
     this.ocrStatus = '';
     this.uploadInProgress = false;
     this.uploadSuccess = false;
+    this.isPdfMode = false;
+    this.isMultiPdfMode = false;
   }
 
   onBackToHomepage(): void {
@@ -194,6 +425,77 @@ export class DocumentScannerComponent {
   getTotalQuantity(): number {
     if (!this.parsedItems) return 0;
     return this.parsedItems.reduce((total, item) => total + item.quantity_asked, 0);
+  }
+
+  getPdfTotalQuantity(pdfData: ProcessedPdf): number {
+    if (!pdfData.parsedItems) return 0;
+    return pdfData.parsedItems.reduce((total, item) => total + item.quantity_asked, 0);
+  }
+
+  updatePdfItemQuantity(pdfData: ProcessedPdf, index: number, event: Event): void {
+    const target = event.target as HTMLInputElement;
+    const value = parseInt(target.value, 10);
+    if (pdfData.parsedItems && !isNaN(value) && value >= 0) {
+      pdfData.parsedItems[index].quantity_asked = value;
+    }
+  }
+
+  updatePdfItemSku(pdfData: ProcessedPdf, index: number, event: Event): void {
+    const target = event.target as HTMLInputElement;
+    if (pdfData.parsedItems) {
+      pdfData.parsedItems[index].sku = target.value;
+      pdfData.parsedItems[index].barcode = parseInt(target.value, 10) || null;
+    }
+  }
+
+  updatePdfItemDescription(pdfData: ProcessedPdf, index: number, event: Event): void {
+    const target = event.target as HTMLInputElement;
+    if (pdfData.parsedItems) {
+      pdfData.parsedItems[index].description = target.value;
+    }
+  }
+
+  removePdfItem(pdfData: ProcessedPdf, index: number): void {
+    if (pdfData.parsedItems) {
+      pdfData.parsedItems.splice(index, 1);
+    }
+  }
+
+  addNewPdfItem(pdfData: ProcessedPdf): void {
+    if (pdfData.parsedItems) {
+      pdfData.parsedItems.push({
+        quantity_asked: 1,
+        quantity_scanned: 0,
+        sku: '',
+        barcode: null,
+        description: '',
+        image: '',
+        reporte: '',
+      });
+    }
+  }
+
+  areAllPdfsSaved(): boolean {
+    return this.isMultiPdfMode && 
+           this.processedPdfs.length > 0 && 
+           this.processedPdfs.every(pdf => pdf.uploadSuccess);
+  }
+
+  togglePdfMinimize(pdfData: ProcessedPdf): void {
+    pdfData.isMinimized = !pdfData.isMinimized;
+  }
+
+  async retryPdfProcessing(pdfData: ProcessedPdf): Promise<void> {
+    // Reset the PDF state
+    pdfData.parsedItems = null;
+    pdfData.error = undefined;
+    pdfData.uploadSuccess = false;
+    pdfData.isUploading = false;
+    pdfData.progress = 0;
+    pdfData.status = 'Reintentando...';
+    
+    // Process the PDF again
+    await this.processSinglePdf(pdfData);
   }
 
   private parseOcrResult(text: string): ScannedItem[] {

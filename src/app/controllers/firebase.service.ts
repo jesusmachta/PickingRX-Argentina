@@ -10,7 +10,6 @@ import {
   DocumentSnapshot,
   DocumentData,
 } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { environment } from '../../environments/environment';
 import { ScannedItem } from '../models/scanned-item.interface';
 import {
@@ -24,13 +23,11 @@ import {
 export class FirebaseService {
   private app: FirebaseApp;
   private firestore: Firestore;
-  private storage;
 
   constructor() {
     try {
       this.app = initializeApp(environment.firebaseConfig);
       this.firestore = getFirestore(this.app);
-      this.storage = getStorage(this.app);
 
       console.log('🔥 Firebase inicializado correctamente');
       console.log('📋 Proyecto:', environment.firebaseConfig.projectId);
@@ -40,17 +37,8 @@ export class FirebaseService {
     }
   }
 
-  async uploadRemitoImage(file: File): Promise<string> {
-    const storageRef = ref(
-      this.storage,
-      `remitos/${new Date().getTime()}_${file.name}`
-    );
-    await uploadBytes(storageRef, file);
-    return getDownloadURL(storageRef);
-  }
 
   async saveScannedData(
-    imageUrl: string,
     items: ScannedItem[]
   ): Promise<string> {
     try {
@@ -68,9 +56,6 @@ export class FirebaseService {
         ),
         createdAt: timestamp,
         updatedAt: timestamp,
-        processed: false,
-        hasImage: !!imageUrl,
-        imageUrl,
       };
 
       // Use idnota as the document ID
