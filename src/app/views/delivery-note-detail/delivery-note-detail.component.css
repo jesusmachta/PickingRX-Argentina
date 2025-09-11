@@ -307,8 +307,16 @@
 
 .scanner-input-container {
   display: flex;
+  flex-direction: column;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-md);
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  gap: var(--spacing-xs);
 }
 
 .scanner-input {
@@ -323,6 +331,21 @@
   transition: all var(--transition-fast);
   background: var(--color-white);
   box-shadow: var(--shadow-light);
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Prevenir zoom en iOS cuando se hace focus */
+.scanner-input {
+  font-size: 16px;
+}
+
+/* Estilos específicos para readonly */
+.scanner-input[readonly] {
+  cursor: default;
+  caret-color: transparent;
 }
 
 .scanner-input:focus {
@@ -649,6 +672,117 @@
     transform: translateY(0);
     scale: 1;
   }
+}
+
+/* Botón del teclado */
+.keyboard-button {
+  padding: var(--spacing-sm);
+  background: var(--color-light-gray);
+  border: 2px solid var(--color-gray);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+}
+
+.keyboard-button:hover {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+
+.keyboard-button:active {
+  transform: scale(0.95);
+}
+
+/* Teclado numérico */
+.numeric-keyboard {
+  background: var(--color-white);
+  border: 2px solid var(--color-light-gray);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-medium);
+  margin-bottom: var(--spacing-md);
+  animation: slideInActions 0.3s ease-out;
+}
+
+.keyboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-light-gray);
+}
+
+.keyboard-header span {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.keyboard-close {
+  background: none;
+  border: none;
+  font-size: var(--font-size-large);
+  cursor: pointer;
+  color: var(--color-gray);
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.keyboard-close:hover {
+  background: var(--color-light-gray);
+  color: var(--color-danger);
+}
+
+.keyboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm);
+}
+
+.key-btn {
+  padding: var(--spacing-md);
+  background: var(--color-white);
+  border: 2px solid var(--color-light-gray);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-large);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.key-btn:hover {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-light);
+}
+
+.key-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.key-btn.action {
+  background: var(--color-secondary-blue);
+  color: var(--color-white);
+  border-color: var(--color-secondary-blue);
+}
+
+.key-btn.action:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .item-progress {
