@@ -61,6 +61,14 @@
         </div>
       </div>
 
+      <!-- Connection Status -->
+      <div class="connection-status" *ngIf="config.note.id.includes('001')">
+        <div class="status-indicator offline">
+          <span class="status-dot"></span>
+          <span class="status-text">Modo Offline - Datos de Prueba</span>
+        </div>
+      </div>
+
       <div class="progress-bar-container">
         <div
           class="progress-bar"
@@ -96,27 +104,46 @@
             <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
             <path d="M8 12h8" />
           </svg>
-          Escanear
+          Escanear Productos
         </h2>
+        <p
+          class="scanner-instruction"
+          *ngIf="config.note.status === DeliveryNoteStatus.POR_PREPARAR"
+        >
+          🔍 Escanea el primer producto para comenzar la preparación
+        </p>
+        <p
+          class="scanner-instruction"
+          *ngIf="config.note.status === DeliveryNoteStatus.PREPARANDO"
+        >
+          📦 Continúa escaneando los productos del pedido
+        </p>
       </div>
 
       <div class="scanner-input-container">
         <input
           type="text"
           class="scanner-input"
-          placeholder="Escanea código..."
+          [class.scanning]="isScanning"
+          placeholder="Apunte el scanner y escanee..."
           [(ngModel)]="scanInputValue"
           (keyup)="onScanInputKeyup($event)"
+          (input)="onScanInputChange($event)"
+          (paste)="onScanInputPaste($event)"
+          (change)="onScanInputChange($event)"
+          (propertychange)="onScanInputChange($event)"
           [disabled]="isScanning"
           #scanInput
+          autocomplete="off"
+          spellcheck="false"
         />
         <button
           class="scan-button"
           (click)="onScanBarcode()"
           [disabled]="!scanInputValue.trim() || isScanning"
         >
-          <span *ngIf="!isScanning">Escanear</span>
-          <span *ngIf="isScanning">Escaneando...</span>
+          <span *ngIf="!isScanning">Procesar</span>
+          <span *ngIf="isScanning">Procesando...</span>
         </button>
       </div>
 
@@ -177,17 +204,19 @@
 
       <div class="items-list">
         <div
-          *ngFor="let item of config.note.items"
+          *ngFor="let item of sortedItems"
           class="item-card"
           [class]="getItemStatusClass(item)"
         >
           <!-- Item Image -->
           <div class="item-image-container">
             <img
-              [src]="item.image"
+              [src]="getItemImageUrl(item)"
               [alt]="item.description"
               class="item-image"
-              onerror="this.src='assets/icons/icon-192x192.png'"
+              (load)="onImageLoad($event)"
+              (error)="onImageError($event)"
+              loading="lazy"
             />
             <div class="item-status-badge">
               {{ getItemStatusText(item) }}
@@ -235,6 +264,50 @@
 
           <!-- Item Actions -->
           <div class="item-actions">
+            <!-- Controles de Cantidad Temporales -->
+            <div
+              class="quantity-controls-actions"
+              *ngIf="canShowQuantityControls(item.sku)"
+            >
+              <button
+                class="quantity-btn decrease"
+                (click)="onDecreaseQuantity(item)"
+                [disabled]="!canDecreaseQuantity(item)"
+                title="Disminuir cantidad"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M5 12h14" />
+                </svg>
+              </button>
+
+              <span class="quantity-current">{{ item.quantity_scanned }}</span>
+
+              <button
+                class="quantity-btn increase"
+                (click)="onIncreaseQuantity(item)"
+                [disabled]="!canIncreaseQuantity(item)"
+                title="Aumentar cantidad"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </button>
+            </div>
+
             <button
               class="action-button report-button"
               (click)="onReportItem(item)"

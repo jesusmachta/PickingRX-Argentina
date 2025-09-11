@@ -13,9 +13,9 @@
 
 /* Header */
 .homepage-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   padding: var(--spacing-md) var(--spacing-lg);
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
@@ -38,8 +38,9 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  flex: 1;
   justify-content: center;
+  text-align: center;
+  grid-column: 2;
 }
 
 .app-icon {
@@ -193,6 +194,7 @@
 /* Responsive design */
 @media (max-width: 768px) {
   .homepage-header {
+    display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
     text-align: center;
@@ -200,6 +202,7 @@
 
   .header-content {
     justify-content: center;
+    grid-column: unset;
   }
 
   .homepage-main {

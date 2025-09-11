@@ -12,8 +12,6 @@
   position: relative;
 }
 
-
-
 /* Header */
 .scanner-header {
   display: flex;
@@ -101,9 +99,9 @@
 
 .upload-options {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: var(--spacing-xl);
-  max-width: 600px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
@@ -111,7 +109,7 @@
   background: var(--color-white);
   color: var(--color-dark-gray);
   border-radius: var(--border-radius-xl);
-  padding: var(--spacing-xl);
+  padding: var(--spacing-xxl);
   box-shadow: var(--shadow-heavy);
   cursor: pointer;
   transition: all var(--transition-medium);
@@ -119,6 +117,8 @@
   position: relative;
   overflow: hidden;
   border: 3px solid transparent;
+  width: 100%;
+  max-width: 400px;
 }
 
 .upload-card::before {
@@ -430,10 +430,19 @@
   table-layout: fixed;
 }
 
-.results-table.editable th:nth-child(1) { width: 100px; } /* Cantidad */
-.results-table.editable th:nth-child(2) { width: 150px; } /* SKU */
-.results-table.editable th:nth-child(3) { width: auto; }   /* Descripción */
-.results-table.editable th:nth-child(4) { width: 100px; text-align: center; }  /* Acciones */
+.results-table.editable th:nth-child(1) {
+  width: 100px;
+} /* Cantidad */
+.results-table.editable th:nth-child(2) {
+  width: 150px;
+} /* SKU */
+.results-table.editable th:nth-child(3) {
+  width: auto;
+} /* Descripción */
+.results-table.editable th:nth-child(4) {
+  width: 100px;
+  text-align: center;
+} /* Acciones */
 
 .editable-row td {
   padding: var(--spacing-sm);
@@ -664,7 +673,7 @@
   .upload-card,
   .results-section,
   .success-card {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-xl);
   }
 
   .upload-icon,
@@ -681,9 +690,15 @@
     min-width: 600px;
   }
 
-  .results-table.editable th:nth-child(1) { width: 80px; }
-  .results-table.editable th:nth-child(2) { width: 120px; }
-  .results-table.editable th:nth-child(4) { width: 80px; }
+  .results-table.editable th:nth-child(1) {
+    width: 80px;
+  }
+  .results-table.editable th:nth-child(2) {
+    width: 120px;
+  }
+  .results-table.editable th:nth-child(4) {
+    width: 80px;
+  }
 
   .table-input {
     font-size: 12px;
@@ -704,6 +719,10 @@
 @media (max-width: 480px) {
   .page-title {
     font-size: var(--font-size-medium);
+  }
+
+  .upload-card {
+    padding: var(--spacing-lg);
   }
 
   .upload-card h3,

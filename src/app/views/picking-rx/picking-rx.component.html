@@ -143,21 +143,12 @@
             <div class="note-header">
               <div class="note-order-info">
                 <h3 class="note-order-number">#{{ note.orderNumber }}</h3>
-                <span
-                  class="note-priority priority-{{ note.priority || 'low' }}"
-                >
-                  {{
-                    (note.priority || "low") === "high"
-                      ? "Alta"
-                      : (note.priority || "low") === "medium"
-                      ? "Media"
-                      : "Baja"
-                  }}
-                </span>
               </div>
               <div class="note-time" *ngIf="note.createdAt">
                 <span class="time-label">Creado:</span>
-                <span class="time-value">{{ formatTime(note.createdAt) }}</span>
+                <span class="time-value">{{
+                  formatDateTime(note.createdAt)
+                }}</span>
               </div>
             </div>
 
