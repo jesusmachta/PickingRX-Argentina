@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -71,7 +71,8 @@ export class DeliveryNoteDetailScannerComponent implements OnInit, OnDestroy, Af
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private deliveryNoteDetailService: DeliveryNoteDetailService
+    private deliveryNoteDetailService: DeliveryNoteDetailService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -167,7 +168,9 @@ export class DeliveryNoteDetailScannerComponent implements OnInit, OnDestroy, Af
         
         console.log('📷 Cámara seleccionada:', this.currentDevice?.label);
         
-        // Start scanning
+        // Ensure the view renders the <video> element before starting
+        this.cdr.detectChanges();
+        // Start scanning (if the element isn't ready yet, startScanning will retry)
         this.startScanning();
       } else {
         console.warn('📷 No se encontraron cámaras disponibles');
@@ -214,7 +217,14 @@ export class DeliveryNoteDetailScannerComponent implements OnInit, OnDestroy, Af
    * Start scanning with the selected device
    */
   private async startScanning(): Promise<void> {
-    if (!this.codeReader || !this.currentDevice || !this.videoRef?.nativeElement) {
+    if (!this.codeReader || !this.currentDevice) {
+      return;
+    }
+
+    // If the <video> element is not yet available (because it is created via *ngIf
+    // after flags change), retry shortly after change detection runs.
+    if (!this.videoRef?.nativeElement) {
+      setTimeout(() => this.startScanning(), 50);
       return;
     }
 
