@@ -131,21 +131,12 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy, AfterView
         const input = this.scanInputRef.nativeElement;
         input.focus();
         
-        // Ensure cursor is at the end of any existing text
-        // Check if setSelectionRange is available and input is not readonly
-        if (typeof input.setSelectionRange === 'function' && !input.readOnly) {
+        // Position cursor at the end of any existing text
+        if (typeof input.setSelectionRange === 'function') {
           input.setSelectionRange(input.value.length, input.value.length);
-        } else if (input.value) {
-          // Alternative method for positioning cursor at end
-          input.value = input.value;
         }
       } catch (error) {
-        // Fallback: just try to focus without cursor positioning
-        try {
-          this.scanInputRef.nativeElement.focus();
-        } catch (focusError) {
-          console.warn('Could not focus scanner input:', focusError);
-        }
+        console.warn('Could not focus scanner input:', error);
       }
     }
   }

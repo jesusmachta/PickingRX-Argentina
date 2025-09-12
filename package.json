@@ -1,5 +1,5 @@
 {
-  "name": "picking-rx-argentina",
+  "name": "picking-arg-argentina",
   "version": "0.0.0",
   "scripts": {
     "ng": "npx ng",
@@ -7,7 +7,7 @@
     "build": "npx ng build --configuration production",
     "watch": "npx ng build --watch --configuration development",
     "test": "npx ng test",
-    "serve:ssr:picking-rx-argentina": "node dist/picking-rx-argentina/server/server.mjs",
+    "serve:ssr:picking-arg-argentina": "node dist/picking-arg-argentina/server/server.mjs",
     "deploy:firebase": "npm run build && firebase deploy",
     "deploy:gcp": "./deploy.sh"
   },

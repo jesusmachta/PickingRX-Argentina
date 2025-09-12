@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🔥 Configurando Firebase para PickingRX Argentina..."
+echo "🔥 Configurando Firebase para PickingARG Argentina..."
 
 # Verificar que Firebase CLI esté instalado
 if ! command -v firebase &> /dev/null; then

@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist/picking-rx-argentina/browser",
+    "public": "dist/picking-arg-argentina/browser",
     "ignore": [
       "firebase.json",
       "**/.*",
