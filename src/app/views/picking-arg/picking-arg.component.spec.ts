@@ -2,59 +2,59 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
 
-import { PickingRxComponent } from './picking-rx.component';
-import { PickingRxService } from '../../controllers/picking-rx.service';
-import { DeliveryNoteStatus } from '../../models/picking-rx.interface';
+import { PickingArgComponent } from './picking-arg.component';
+import { PickingArgService } from '../../controllers/picking-arg.service';
+import { DeliveryNoteStatus } from '../../models/picking-arg.interface';
 
-describe('PickingRxComponent', () => {
-  let component: PickingRxComponent;
-  let fixture: ComponentFixture<PickingRxComponent>;
-  let mockPickingRxService: jasmine.SpyObj<PickingRxService>;
+describe('PickingArgComponent', () => {
+  let component: PickingArgComponent;
+  let fixture: ComponentFixture<PickingArgComponent>;
+  let mockPickingArgService: jasmine.SpyObj<PickingArgService>;
   let mockRouter: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
-    const pickingRxServiceSpy = jasmine.createSpyObj('PickingRxService', [
-      'getPickingRxConfig',
+    const pickingArgServiceSpy = jasmine.createSpyObj('PickingArgService', [
+      'getPickingArgConfig',
       'getDeliveryNotesByStatus',
       'updateDeliveryNoteStatus',
     ]);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
     await TestBed.configureTestingModule({
-      imports: [PickingRxComponent],
+      imports: [PickingArgComponent],
       providers: [
-        { provide: PickingRxService, useValue: pickingRxServiceSpy },
+        { provide: PickingArgService, useValue: pickingArgServiceSpy },
         { provide: Router, useValue: routerSpy },
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(PickingRxComponent);
+    fixture = TestBed.createComponent(PickingArgComponent);
     component = fixture.componentInstance;
-    mockPickingRxService = TestBed.inject(
-      PickingRxService
-    ) as jasmine.SpyObj<PickingRxService>;
+    mockPickingArgService = TestBed.inject(
+      PickingArgService
+    ) as jasmine.SpyObj<PickingArgService>;
     mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
 
     // Setup default mock returns
-    mockPickingRxService.getPickingRxConfig.and.returnValue(
+    mockPickingArgService.getPickingArgConfig.and.returnValue(
       of({
-        title: 'Picking RX',
+        title: 'Picking ARG',
         subtitle: 'Test subtitle',
         statusList: [],
         totalOrders: 0,
       })
     );
-    mockPickingRxService.getDeliveryNotesByStatus.and.returnValue(of([]));
-    mockPickingRxService.updateDeliveryNoteStatus.and.returnValue(of(true));
+    mockPickingArgService.getDeliveryNotesByStatus.and.returnValue(of([]));
+    mockPickingArgService.updateDeliveryNoteStatus.and.returnValue(of(true));
   });
 
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should load picking rx config on init', () => {
+  it('should load picking arg config on init', () => {
     component.ngOnInit();
-    expect(mockPickingRxService.getPickingRxConfig).toHaveBeenCalled();
+    expect(mockPickingArgService.getPickingArgConfig).toHaveBeenCalled();
   });
 
   it('should navigate back to homepage', () => {

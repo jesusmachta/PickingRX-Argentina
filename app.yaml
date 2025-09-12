@@ -3,35 +3,35 @@ runtime: nodejs20
 handlers:
   # Manejo de archivos estáticos específicos
   - url: /favicon.ico
-    static_files: dist/picking-rx-argentina/browser/favicon.ico
-    upload: dist/picking-rx-argentina/browser/favicon.ico
+    static_files: dist/picking-arg-argentina/browser/favicon.ico
+    upload: dist/picking-arg-argentina/browser/favicon.ico
 
   - url: /manifest.json
-    static_files: dist/picking-rx-argentina/browser/manifest.json
-    upload: dist/picking-rx-argentina/browser/manifest.json
+    static_files: dist/picking-arg-argentina/browser/manifest.json
+    upload: dist/picking-arg-argentina/browser/manifest.json
 
   # Service Worker
   - url: /ngsw-worker.js
-    static_files: dist/picking-rx-argentina/browser/ngsw-worker.js
-    upload: dist/picking-rx-argentina/browser/ngsw-worker.js
+    static_files: dist/picking-arg-argentina/browser/ngsw-worker.js
+    upload: dist/picking-arg-argentina/browser/ngsw-worker.js
 
   - url: /ngsw.json
-    static_files: dist/picking-rx-argentina/browser/ngsw.json
-    upload: dist/picking-rx-argentina/browser/ngsw.json
+    static_files: dist/picking-arg-argentina/browser/ngsw.json
+    upload: dist/picking-arg-argentina/browser/ngsw.json
 
   # Archivos de assets
   - url: /assets
-    static_dir: dist/picking-rx-argentina/browser/assets
+    static_dir: dist/picking-arg-argentina/browser/assets
 
   # CSS y JS files
   - url: /(.*\.(css|js|map))$
-    static_files: dist/picking-rx-argentina/browser/\1
-    upload: dist/picking-rx-argentina/browser/.*\.(css|js|map)$
+    static_files: dist/picking-arg-argentina/browser/\1
+    upload: dist/picking-arg-argentina/browser/.*\.(css|js|map)$
 
   # Todas las otras rutas al index.html para Angular routing
   - url: /.*
-    static_files: dist/picking-rx-argentina/browser/index.html
-    upload: dist/picking-rx-argentina/browser/index.html
+    static_files: dist/picking-arg-argentina/browser/index.html
+    upload: dist/picking-arg-argentina/browser/index.html
 
 # Configuración adicional para PWA
 env_variables:

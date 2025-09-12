@@ -22,12 +22,12 @@ export class HomepageService {
       subtitle: '',
       functionalities: [
         {
-          id: 'picking-rx',
+          id: 'picking-arg',
           title: 'Picking',
           description:
             'Gestión de pedidos de domicilios pendientes y preparados',
           icon: 'truck',
-          route: '/picking-rx',
+          route: '/picking-arg',
           isEnabled: true,
           color: CORPORATE_COLORS.PRIMARY,
         },

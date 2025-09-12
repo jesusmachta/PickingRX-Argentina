@@ -1,5 +1,5 @@
 /**
- * Colores corporativos de PickingRX Argentina
+ * Colores corporativos de PickingARG Argentina
  */
 export const CORPORATE_COLORS = {
   // Color principal - Azul oscuro

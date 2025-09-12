@@ -1,6 +1,6 @@
 @import "../../shared/styles/variables.css";
 
-.picking-rx-container {
+.picking-arg-container {
   min-height: 100vh;
   background: linear-gradient(
     135deg,
@@ -12,7 +12,7 @@
 }
 
 /* Header */
-.picking-rx-header {
+.picking-arg-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -133,7 +133,7 @@
 }
 
 /* Main Content */
-.picking-rx-main {
+.picking-arg-main {
   padding: var(--spacing-xxl) var(--spacing-lg);
   max-width: 1400px;
   margin: 0 auto;
@@ -472,6 +472,9 @@
 }
 
 .action-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-md);
   border: none;
   border-radius: var(--border-radius-md);
@@ -479,6 +482,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
+  white-space: nowrap;
 }
 
 .action-button.primary {
@@ -489,6 +493,26 @@
 .action-button.primary:hover {
   background: var(--color-secondary-blue);
   transform: translateY(-2px);
+}
+
+.action-button.secondary {
+  background: var(--color-light-gray);
+  color: var(--color-dark-gray);
+  border: 1px solid var(--color-gray);
+}
+
+.action-button.secondary:hover {
+  background: var(--color-gray);
+  color: var(--color-white);
+  transform: translateY(-2px);
+}
+
+.scanner-button {
+  background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+}
+
+.scanner-button:hover {
+  background: linear-gradient(135deg, #c0392b, #a93226) !important;
 }
 
 /* Empty State */
@@ -522,7 +546,7 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .picking-rx-header {
+  .picking-arg-header {
     flex-direction: column;
     gap: var(--spacing-md);
     text-align: center;
@@ -532,7 +556,7 @@
     justify-content: center;
   }
 
-  .picking-rx-main {
+  .picking-arg-main {
     padding: var(--spacing-xl) var(--spacing-md);
   }
 

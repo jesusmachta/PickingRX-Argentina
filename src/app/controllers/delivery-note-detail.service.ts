@@ -11,7 +11,7 @@ import {
   ProductReport,
   DeliveryNoteStatus,
   DeliveryNoteStatusText,
-} from '../models/picking-rx.interface';
+} from '../models/picking-arg.interface';
 import { FirebaseService } from './firebase.service';
 
 @Injectable({

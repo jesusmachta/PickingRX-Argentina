@@ -72,9 +72,9 @@ export interface StatusConfig {
 }
 
 /**
- * Interface para la configuración de la vista de Picking RX
+ * Interface para la configuración de la vista de Picking ARG
  */
-export interface PickingRxConfig {
+export interface PickingArgConfig {
   title: string;
   subtitle: string;
   statusList: StatusConfig[];
