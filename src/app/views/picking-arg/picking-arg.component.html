@@ -1,6 +1,6 @@
-<div class="picking-rx-container">
+<div class="picking-arg-container">
   <!-- Header -->
-  <header class="picking-rx-header">
+  <header class="picking-arg-header">
     <button
       class="back-button"
       (click)="onBackToHomepage()"
@@ -41,18 +41,18 @@
         </svg>
       </div>
       <div class="header-text">
-        <h1 class="app-title" *ngIf="pickingRxConfig">
-          {{ pickingRxConfig.title }}
+        <h1 class="app-title" *ngIf="pickingArgConfig">
+          {{ pickingArgConfig.title }}
         </h1>
-        <p class="app-subtitle" *ngIf="pickingRxConfig">
-          {{ pickingRxConfig.subtitle }}
+        <p class="app-subtitle" *ngIf="pickingArgConfig">
+          {{ pickingArgConfig.subtitle }}
         </p>
       </div>
     </div>
 
-    <div class="header-stats" *ngIf="pickingRxConfig">
+    <div class="header-stats" *ngIf="pickingArgConfig">
       <div class="stats-item">
-        <span class="stats-number">{{ pickingRxConfig.totalOrders }}</span>
+        <span class="stats-number">{{ pickingArgConfig.totalOrders }}</span>
         <span class="stats-label">Total Pedidos</span>
       </div>
     </div>
@@ -65,7 +65,7 @@
   </div>
 
   <!-- Main Content -->
-  <main class="picking-rx-main" *ngIf="!isLoading && pickingRxConfig">
+  <main class="picking-arg-main" *ngIf="!isLoading && pickingArgConfig">
     <!-- Vista Principal - Todas las notas organizadas por estado -->
     <div class="status-overview">
       <div class="section-header">
@@ -164,11 +164,50 @@
             <div class="note-footer">
               <div class="note-actions">
                 <button
-                  class="action-button primary"
+                  class="action-button secondary"
                   (click)="onDeliveryNoteClick(note); $event.stopPropagation()"
                   aria-label="Ver detalles del pedido"
                 >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                  </svg>
                   Ver Detalles
+                </button>
+                <button
+                  class="action-button primary scanner-button"
+                  (click)="onScannerModeClick(note, $event)"
+                  aria-label="Abrir modo scanner"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M12 9a4 4 0 0 0-2 7.5" />
+                    <path d="M12 3a4 4 0 0 1 2 7.5" />
+                    <path d="m6 8 1.5 1.5" />
+                    <path d="m16.5 13.5L18 15" />
+                    <path d="m6 16 1.5-1.5" />
+                    <path d="m16.5 10.5L18 9" />
+                  </svg>
+                  Escanear
                 </button>
               </div>
             </div>

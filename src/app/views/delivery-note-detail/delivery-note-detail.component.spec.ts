@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 
 import { DeliveryNoteDetailComponent } from './delivery-note-detail.component';
 import { DeliveryNoteDetailService } from '../../controllers/delivery-note-detail.service';
-import { DeliveryNoteStatus } from '../../models/picking-rx.interface';
+import { DeliveryNoteStatus } from '../../models/picking-arg.interface';
 
 describe('DeliveryNoteDetailComponent', () => {
   let component: DeliveryNoteDetailComponent;
@@ -85,7 +85,7 @@ describe('DeliveryNoteDetailComponent', () => {
 
   it('should navigate back to list', () => {
     component.onBackToList();
-    expect(mockRouter.navigate).toHaveBeenCalledWith(['/picking-rx']);
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['/picking-arg']);
   });
 
   it('should get correct item status class', () => {

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -12,7 +12,7 @@ import {
   ProductReport,
   DeliveryNoteStatus,
   DeliveryNoteStatusText,
-} from '../../models/picking-rx.interface';
+} from '../../models/picking-arg.interface';
 
 @Component({
   selector: 'app-delivery-note-detail',
@@ -21,7 +21,7 @@ import {
   templateUrl: './delivery-note-detail.component.html',
   styleUrl: './delivery-note-detail.component.css',
 })
-export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
+export class DeliveryNoteDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   config: DeliveryNoteDetailConfig | null = null;
   isLoading = true;
   scanInputValue = '';
@@ -53,6 +53,9 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private noteId = '';
 
+  // ViewChild for scanner input
+  @ViewChild('scanInput', { static: false }) scanInputRef!: ElementRef<HTMLInputElement>;
+
   // Enum references for template
   DeliveryNoteStatus = DeliveryNoteStatus;
   DeliveryNoteStatusText = DeliveryNoteStatusText;
@@ -70,6 +73,11 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
         this.loadDeliveryNoteDetail();
       }
     });
+  }
+
+  ngAfterViewInit(): void {
+    // Focus the scanner input after view initialization
+    this.focusScannerInput();
   }
 
   ngOnDestroy(): void {
@@ -104,6 +112,8 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
           this.config = config;
           this.isLoading = false;
           this.updateSortedItems(); // Ordenar productos inicialmente
+          // Focus scanner input after loading is complete
+          setTimeout(() => this.focusScannerInput(), 100);
         },
         error: (error) => {
           console.error('Error al cargar el detalle de la nota:', error);
@@ -113,10 +123,29 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Enfoca el campo de entrada del scanner
+   */
+  private focusScannerInput(): void {
+    if (this.scanInputRef?.nativeElement && this.config?.canScan) {
+      try {
+        const input = this.scanInputRef.nativeElement;
+        input.focus();
+        
+        // Position cursor at the end of any existing text
+        if (typeof input.setSelectionRange === 'function') {
+          input.setSelectionRange(input.value.length, input.value.length);
+        }
+      } catch (error) {
+        console.warn('Could not focus scanner input:', error);
+      }
+    }
+  }
+
+  /**
    * Navega de vuelta a la lista de picking
    */
   onBackToList(): void {
-    this.router.navigate(['/picking-rx']);
+    this.router.navigate(['/picking-arg']);
   }
 
   /**
@@ -148,6 +177,9 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
             this.loadDeliveryNoteDetail();
           }
 
+          // Refocus the scanner input for continuous scanning
+          setTimeout(() => this.focusScannerInput(), 50);
+
           // Limpiar el resultado después de 3 segundos
           setTimeout(() => {
             this.lastScanResult = null;
@@ -156,6 +188,8 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
         error: (error) => {
           console.error('Error al escanear código:', error);
           this.isScanning = false;
+          // Refocus even on error for continuous scanning
+          setTimeout(() => this.focusScannerInput(), 50);
         },
       });
   }
@@ -206,6 +240,17 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy {
         this.onScanBarcode();
       }
     }, 10);
+  }
+
+  /**
+   * Maneja el evento blur del input para mantener el foco
+   */
+  onScanInputBlur(event: FocusEvent): void {
+    // Refocus after a short delay to maintain continuous scanning capability
+    // Only if we're not currently scanning and the component can scan
+    if (!this.isScanning && this.config?.canScan) {
+      setTimeout(() => this.focusScannerInput(), 100);
+    }
   }
 
   /**

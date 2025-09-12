@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "picking-rx-argentina": {
+    "picking-arg-argentina": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -13,7 +13,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/picking-rx-argentina",
+            "outputPath": "dist/picking-arg-argentina",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -53,8 +53,8 @@
               },
               {
                 "type": "anyComponentStyle",
-                "maximumWarning": "6kb",
-                "maximumError": "15kb"
+                "maximumWarning": "10kb",
+                "maximumError": "20kb"
               }
             ],
               "outputHashing": "all"
@@ -71,10 +71,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "picking-rx-argentina:build:production"
+              "buildTarget": "picking-arg-argentina:build:production"
             },
             "development": {
-              "buildTarget": "picking-rx-argentina:build:development"
+              "buildTarget": "picking-arg-argentina:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -82,7 +82,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "buildTarget": "picking-rx-argentina:build"
+            "buildTarget": "picking-arg-argentina:build"
           }
         },
         "test": {
