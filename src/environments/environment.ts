@@ -1,3 +1,5 @@
+// Development environment configuration
+// Note: API keys are visible in development builds - this is normal for client-side apps
 export const environment = {
   production: false,
   firebaseConfig: {
@@ -9,7 +11,9 @@ export const environment = {
     appId: "1:406735201461:web:1fa7ac749c7e95b86ccafc"
   },
   geminiConfig: {
-    apiKey: "AIzaSyBbEi0aXb7Qo82wITE5B9Ny3EI8eQ01yPw", // Replace with your actual Gemini API key
+    // Gemini API key for AI-powered OCR text parsing
+    // For production: Consider using Firebase Functions as a proxy to hide the API key
+    apiKey: "AIzaSyBbEi0aXb7Qo82wITE5B9Ny3EI8eQ01yPw",
     apiUrl: "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
   }
 };
