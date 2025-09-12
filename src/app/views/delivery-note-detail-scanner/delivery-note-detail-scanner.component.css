@@ -87,6 +87,61 @@
   transform: translateX(-2px);
 }
 
+/* Minimal Header */
+.minimal-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: var(--spacing-sm) var(--spacing-md);
+  flex-shrink: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+.note-id-minimal {
+  font-size: var(--font-size-medium);
+  font-weight: 600;
+  color: var(--color-white);
+  flex: 1;
+}
+
+.note-status-minimal {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.note-status-minimal.status-por-preparar {
+  background: rgba(161, 161, 0, 0.2);
+  color: #A1A100;
+  border: 1px solid rgba(161, 161, 0, 0.3);
+}
+
+.note-status-minimal.status-preparando {
+  background: rgba(0, 132, 221, 0.2);
+  color: #0084DD;
+  border: 1px solid rgba(0, 132, 221, 0.3);
+}
+
+.note-status-minimal.status-listo {
+  background: rgba(0, 161, 154, 0.2);
+  color: #00A19A;
+  border: 1px solid rgba(0, 161, 154, 0.3);
+}
+
+.note-status-minimal.status-faltan-productos {
+  background: rgba(74, 16, 110, 0.2);
+  color: #4A106E;
+  border: 1px solid rgba(74, 16, 110, 0.3);
+}
+
 .header-info {
   flex: 1;
 }

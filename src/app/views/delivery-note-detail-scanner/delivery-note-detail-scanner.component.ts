@@ -137,6 +137,16 @@ export class DeliveryNoteDetailScannerComponent implements OnInit, OnDestroy, Af
    */
   private async initializeScanner(): Promise<void> {
     try {
+      console.log('🎥 Inicializando scanner...');
+      
+      // First check for camera permission
+      await this.checkCameraPermission();
+      
+      if (!this.hasPermission) {
+        console.warn('❌ No hay permisos de cámara');
+        return;
+      }
+      
       // Initialize the code reader
       this.codeReader = new BrowserMultiFormatReader();
       
@@ -144,6 +154,8 @@ export class DeliveryNoteDetailScannerComponent implements OnInit, OnDestroy, Af
       const videoInputDevices = await this.codeReader.listVideoInputDevices();
       this.availableDevices = videoInputDevices;
       this.hasDevices = videoInputDevices.length > 0;
+      
+      console.log('📱 Dispositivos encontrados:', videoInputDevices.length);
       
       if (this.hasDevices) {
         // Select the first back camera if available, otherwise first camera
@@ -153,13 +165,48 @@ export class DeliveryNoteDetailScannerComponent implements OnInit, OnDestroy, Af
         );
         this.currentDevice = backCamera || videoInputDevices[0];
         
+        console.log('📷 Cámara seleccionada:', this.currentDevice?.label);
+        
         // Start scanning
         this.startScanning();
+      } else {
+        console.warn('📷 No se encontraron cámaras disponibles');
       }
     } catch (error) {
       console.error('Error initializing scanner:', error);
       this.hasDevices = false;
       this.hasPermission = false;
+    }
+  }
+
+  /**
+   * Check camera permission
+   */
+  private async checkCameraPermission(): Promise<void> {
+    try {
+      // Try to get camera access to check permission
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment' 
+        } 
+      });
+      
+      // Permission granted
+      this.hasPermission = true;
+      console.log('✅ Permisos de cámara confirmados');
+      
+      // Stop the stream immediately since we just wanted to check permission
+      stream.getTracks().forEach(track => track.stop());
+      
+    } catch (error: any) {
+      console.error('❌ Error al verificar permisos de cámara:', error);
+      this.hasPermission = false;
+      
+      if (error.name === 'NotAllowedError') {
+        console.warn('❌ Permisos de cámara denegados por el usuario');
+      } else if (error.name === 'NotFoundError') {
+        console.warn('📷 No se encontró cámara en el dispositivo');
+      }
     }
   }
 

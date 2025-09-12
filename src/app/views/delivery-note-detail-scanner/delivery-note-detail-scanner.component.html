@@ -7,8 +7,8 @@
 
   <!-- Main Content -->
   <div class="scanner-detail-content" *ngIf="!isLoading && config">
-    <!-- Header -->
-    <header class="detail-header">
+    <!-- Minimal Header -->
+    <div class="minimal-header">
       <button
         class="back-button"
         (click)="onBackToList()"
@@ -28,52 +28,17 @@
           <path d="m15 18-6-6 6-6" />
         </svg>
       </button>
-
-      <div class="header-info">
-        <div class="note-id">
-          <h1 class="note-title">ID: {{ config.note.orderNumber }}</h1>
-          <span
-            class="note-status"
-            [class]="getStatusClass(config.note.status)"
-          >
-            {{ DeliveryNoteStatusText[config.note.status] }}
-          </span>
-        </div>
-        <div class="note-metadata">
-          <p class="note-time" *ngIf="config.note.createdAt">
-            {{ formatTime(config.note.createdAt) }}
-          </p>
-          <p class="note-location" *ngIf="config.note.address">
-            {{ config.note.address }}
-          </p>
-        </div>
-      </div>
-
-      <div class="scanner-mode-badge">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M12 9a4 4 0 0 0-2 7.5" />
-          <path d="M12 3a4 4 0 0 1 2 7.5" />
-          <path d="m6 8 1.5 1.5" />
-          <path d="m16.5 13.5L18 15" />
-          <path d="m6 16 1.5-1.5" />
-          <path d="m16.5 10.5L18 9" />
-        </svg>
-        Modo Cámara
-      </div>
-    </header>
+      <span class="note-id-minimal">ID: {{ config.note.orderNumber }}</span>
+      <span
+        class="note-status-minimal"
+        [class]="getStatusClass(config.note.status)"
+      >
+        {{ DeliveryNoteStatusText[config.note.status] }}
+      </span>
+    </div>
 
     <!-- Camera Scanner Section -->
-    <section class="camera-scanner-section" [style.height.%]="100 - itemListHeight">
+    <section class="camera-scanner-section" [style.height.vh]="85">
       <div class="scanner-container">
         <!-- Camera Permission and Device Status -->
         <div class="scanner-status" *ngIf="!hasPermission || !hasDevices">
