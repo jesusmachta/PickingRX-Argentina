@@ -15,7 +15,7 @@ import { ScannedItem } from '../models/scanned-item.interface';
 import {
   FirebaseDeliveryNote,
   DeliveryItem,
-} from '../models/picking-rx.interface';
+} from '../models/picking-arg.interface';
 
 @Injectable({
   providedIn: 'root',

@@ -13,7 +13,7 @@ import {
   ProductReport,
   DeliveryNoteStatus,
   DeliveryNoteStatusText,
-} from '../../models/picking-rx.interface';
+} from '../../models/picking-arg.interface';
 
 @Component({
   selector: 'app-delivery-note-detail-scanner',
@@ -129,7 +129,7 @@ export class DeliveryNoteDetailScannerComponent implements OnInit, OnDestroy, Af
    * Navigate back to picking list
    */
   onBackToList(): void {
-    this.router.navigate(['/picking-rx']);
+    this.router.navigate(['/picking-arg']);
   }
 
   /**

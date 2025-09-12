@@ -12,7 +12,7 @@ import {
   ProductReport,
   DeliveryNoteStatus,
   DeliveryNoteStatusText,
-} from '../../models/picking-rx.interface';
+} from '../../models/picking-arg.interface';
 
 @Component({
   selector: 'app-delivery-note-detail',
@@ -145,7 +145,7 @@ export class DeliveryNoteDetailComponent implements OnInit, OnDestroy, AfterView
    * Navega de vuelta a la lista de picking
    */
   onBackToList(): void {
-    this.router.navigate(['/picking-rx']);
+    this.router.navigate(['/picking-arg']);
   }
 
   /**

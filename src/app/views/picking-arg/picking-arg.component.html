@@ -1,6 +1,6 @@
-<div class="picking-rx-container">
+<div class="picking-arg-container">
   <!-- Header -->
-  <header class="picking-rx-header">
+  <header class="picking-arg-header">
     <button
       class="back-button"
       (click)="onBackToHomepage()"
@@ -41,18 +41,18 @@
         </svg>
       </div>
       <div class="header-text">
-        <h1 class="app-title" *ngIf="pickingRxConfig">
-          {{ pickingRxConfig.title }}
+        <h1 class="app-title" *ngIf="pickingArgConfig">
+          {{ pickingArgConfig.title }}
         </h1>
-        <p class="app-subtitle" *ngIf="pickingRxConfig">
-          {{ pickingRxConfig.subtitle }}
+        <p class="app-subtitle" *ngIf="pickingArgConfig">
+          {{ pickingArgConfig.subtitle }}
         </p>
       </div>
     </div>
 
-    <div class="header-stats" *ngIf="pickingRxConfig">
+    <div class="header-stats" *ngIf="pickingArgConfig">
       <div class="stats-item">
-        <span class="stats-number">{{ pickingRxConfig.totalOrders }}</span>
+        <span class="stats-number">{{ pickingArgConfig.totalOrders }}</span>
         <span class="stats-label">Total Pedidos</span>
       </div>
     </div>
@@ -65,7 +65,7 @@
   </div>
 
   <!-- Main Content -->
-  <main class="picking-rx-main" *ngIf="!isLoading && pickingRxConfig">
+  <main class="picking-arg-main" *ngIf="!isLoading && pickingArgConfig">
     <!-- Vista Principal - Todas las notas organizadas por estado -->
     <div class="status-overview">
       <div class="section-header">

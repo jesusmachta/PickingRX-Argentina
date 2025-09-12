@@ -2,36 +2,36 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
-import { PickingRxService } from '../../controllers/picking-rx.service';
+import { PickingArgService } from '../../controllers/picking-arg.service';
 import {
-  PickingRxConfig,
+  PickingArgConfig,
   StatusConfig,
   ProcessedDeliveryNote,
   DeliveryNoteStatus,
   DeliveryNoteStatusText,
-} from '../../models/picking-rx.interface';
+} from '../../models/picking-arg.interface';
 
 @Component({
-  selector: 'app-picking-rx',
+  selector: 'app-picking-arg',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './picking-rx.component.html',
-  styleUrl: './picking-rx.component.css',
+  templateUrl: './picking-arg.component.html',
+  styleUrl: './picking-arg.component.css',
 })
-export class PickingRxComponent implements OnInit, OnDestroy {
-  pickingRxConfig: PickingRxConfig | null = null;
+export class PickingArgComponent implements OnInit, OnDestroy {
+  pickingArgConfig: PickingArgConfig | null = null;
   deliveryNotesByStatus: { [key: number]: ProcessedDeliveryNote[] } = {};
   isLoading = true;
 
   private destroy$ = new Subject<void>();
 
   constructor(
-    private pickingRxService: PickingRxService,
+    private pickingArgService: PickingArgService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
-    this.loadPickingRxConfig();
+    this.loadPickingArgConfig();
   }
 
   ngOnDestroy(): void {
@@ -40,20 +40,20 @@ export class PickingRxComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Carga la configuración de Picking RX y todas las notas por estado
+   * Carga la configuración de Picking ARG y todas las notas por estado
    */
-  private loadPickingRxConfig(): void {
-    this.pickingRxService
-      .getPickingRxConfig()
+  private loadPickingArgConfig(): void {
+    this.pickingArgService
+      .getPickingArgConfig()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (config) => {
-          this.pickingRxConfig = config;
+          this.pickingArgConfig = config;
           this.loadAllDeliveryNotes();
         },
         error: (error) => {
           console.error(
-            'Error al cargar la configuración de Picking RX:',
+            'Error al cargar la configuración de Picking ARG:',
             error
           );
           this.isLoading = false;
@@ -87,7 +87,7 @@ export class PickingRxComponent implements OnInit, OnDestroy {
   }
 
   private loadNotesForStatus(status: DeliveryNoteStatus): void {
-    this.pickingRxService
+    this.pickingArgService
       .getDeliveryNotesByStatus(status)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -112,7 +112,7 @@ export class PickingRxComponent implements OnInit, OnDestroy {
    * Maneja el clic en una nota de entrega
    */
   onDeliveryNoteClick(note: ProcessedDeliveryNote): void {
-    this.router.navigate(['/picking-rx/detail', note.id]);
+    this.router.navigate(['/picking-arg/detail', note.id]);
   }
 
   /**
@@ -120,7 +120,7 @@ export class PickingRxComponent implements OnInit, OnDestroy {
    */
   onScannerModeClick(note: ProcessedDeliveryNote, event: Event): void {
     event.stopPropagation(); // Prevent triggering the card click
-    this.router.navigate(['/picking-rx/scanner', note.id]);
+    this.router.navigate(['/picking-arg/scanner', note.id]);
   }
 
   /**
@@ -136,9 +136,9 @@ export class PickingRxComponent implements OnInit, OnDestroy {
    * Obtiene la configuración de estado filtrada (solo Por Preparar y Preparando)
    */
   getVisibleStatusConfigs(): StatusConfig[] {
-    if (!this.pickingRxConfig) return [];
+    if (!this.pickingArgConfig) return [];
 
-    return this.pickingRxConfig.statusList.filter(
+    return this.pickingArgConfig.statusList.filter(
       (config) =>
         config.status === DeliveryNoteStatus.POR_PREPARAR ||
         config.status === DeliveryNoteStatus.PREPARANDO

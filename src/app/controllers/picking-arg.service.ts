@@ -15,17 +15,17 @@ import {
   FirebaseDeliveryNote,
   DeliveryNoteStatus,
   StatusConfig,
-  PickingRxConfig,
+  PickingArgConfig,
   DeliveryNoteFilters,
   DeliveryItem,
   DeliveryNoteStatusText,
-} from '../models/picking-rx.interface';
+} from '../models/picking-arg.interface';
 import { CORPORATE_COLORS } from '../shared/constants/colors';
 
 @Injectable({
   providedIn: 'root',
 })
-export class PickingRxService {
+export class PickingArgService {
   private firestore = inject(Firestore);
   private remitosCollection = collection(this.firestore, 'Remitos');
 
@@ -39,16 +39,16 @@ export class PickingRxService {
   }
 
   /**
-   * Obtiene la configuración de la vista de Picking RX
+   * Obtiene la configuración de la vista de Picking ARG
    */
-  getPickingRxConfig(): Observable<PickingRxConfig> {
+  getPickingArgConfig(): Observable<PickingArgConfig> {
     return this.deliveryNotes$.pipe(
       map((notes) => {
         const statusList = this.getStatusConfigs(notes);
         const totalOrders = notes.length;
 
-        const config: PickingRxConfig = {
-          title: 'Picking RX',
+        const config: PickingArgConfig = {
+          title: 'Picking ARG',
           subtitle: 'Gestión de notas de entrega y pedidos de domicilio',
           statusList,
           totalOrders,
